@@ -3,951 +3,813 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Cotações Químicos — Meridional TCS</title>
+  <title>Cotações Químicos — Meridional TCS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    /* ═══════════════════════════════════════════════════════
+       DESIGN TOKENS  (skill: OLED Dark + Financial + Real-Time)
+       ═══════════════════════════════════════════════════════ */
     :root {
-      --bg:        #080c14;
-      --sidebar:   #0c1120;
-      --card:      #111827;
-      --card2:     #151f2e;
-      --border:    rgba(255,255,255,0.06);
-      --green:     #00e676;
-      --green2:    #69f0ae;
-      --green-dim: rgba(0,230,118,0.12);
-      --green-glow:rgba(0,230,118,0.25);
-      --red:       #ff5252;
-      --yellow:    #ffd740;
-      --text:      #e8edf5;
-      --text2:     #7a8899;
-      --text3:     #4a5568;
-      --radius:    14px;
-      --radius-sm: 8px;
+      --bg-void:    #080C12;
+      --bg-surface: #0D1422;
+      --bg-card:    #111B2E;
+      --bg-card-h:  #162035;
+      --bg-muted:   #1A2540;
+      --bg-input:   #0F1929;
+      --border:     rgba(255,255,255,0.07);
+      --border-act: rgba(0,230,118,0.30);
+      --green:      #00E676;
+      --green-dim:  rgba(0,230,118,0.10);
+      --green-glow: 0 0 20px rgba(0,230,118,0.35);
+      --green-text: 0 0 8px rgba(0,230,118,0.5);
+      --cyan:       #00D4FF;
+      --cyan-dim:   rgba(0,212,255,0.10);
+      --red:        #FF5252;
+      --red-dim:    rgba(255,82,82,0.12);
+      --yellow:     #FFD740;
+      --yellow-dim: rgba(255,215,64,0.12);
+      --purple:     #B388FF;
+      --purple-dim: rgba(179,136,255,0.12);
+      --t1: #EAF0FB;
+      --t2: #7A90B5;
+      --t3: #3D5273;
+      --g-acidos:  #FF6B6B;
+      --g-alcoois: #4FC3F7;
+      --g-outros:  #B388FF;
+      --g-pegs:    #69F0AE;
+      --g-tens:    #FFD740;
+      --g-edul:    #26C6DA;
+      --r:    12px;
+      --r-sm:  8px;
+      --r-xs:  5px;
+      --ease: cubic-bezier(0.4,0,0.2,1);
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      overflow: hidden;
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html { height:100%; color-scheme:dark; }
+    body {
+      height:100%; overflow:hidden;
+      background:var(--bg-void);
+      color:var(--t1);
+      font-family:'Fira Sans',system-ui,sans-serif;
+      font-size:14px; line-height:1.5;
+      -webkit-font-smoothing:antialiased;
     }
+    .num { font-family:'Fira Code',monospace; font-variant-numeric:tabular-nums; }
+    :focus-visible { outline:2px solid var(--green); outline-offset:2px; border-radius:var(--r-xs); }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#1E2D47; border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:#2A3E5E; }
 
-    /* ── LAYOUT ─────────────────────────────────────── */
-    .app { display: flex; height: 100vh; }
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .app { display:flex; height:100vh; }
 
-    /* ── SIDEBAR ─────────────────────────────────────── */
+    /* ── SIDEBAR ─────────────────────────────────────────────── */
     .sidebar {
-      width: 220px;
-      min-width: 220px;
-      background: var(--sidebar);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 24px 0 16px;
-      gap: 0;
-      overflow-y: auto;
+      width:230px; min-width:230px;
+      background:var(--bg-surface);
+      border-right:1px solid var(--border);
+      display:flex; flex-direction:column;
+      padding:0 0 16px;
+      overflow-y:auto;
     }
-
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      padding: 0 20px 24px;
-      font-size: 15px; font-weight: 700; color: var(--text);
-      border-bottom: 1px solid var(--border);
+    .sidebar-logo {
+      display:flex; align-items:center; gap:11px;
+      padding:22px 18px 20px;
+      border-bottom:1px solid var(--border);
     }
-    .logo-icon {
-      width: 34px; height: 34px; border-radius: 10px;
-      background: linear-gradient(135deg, #00e676, #00b0ff);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+    .logo-mark {
+      width:36px; height:36px; flex-shrink:0;
+      border-radius:10px;
+      background:linear-gradient(135deg,#00E676 0%,#00B0FF 100%);
+      display:flex; align-items:center; justify-content:center;
     }
-    .logo-sub { font-size: 10px; color: var(--text2); font-weight: 400; display: block; }
-
-    .nav-section {
-      padding: 20px 20px 8px;
-      font-size: 10px; font-weight: 600; letter-spacing: 1px;
-      color: var(--text3); text-transform: uppercase;
+    .logo-name { font-weight:700; font-size:13px; color:var(--t1); line-height:1.2; }
+    .logo-sub  { font-size:10px; color:var(--t3); letter-spacing:.3px; }
+    .nav-label {
+      padding:20px 18px 6px;
+      font-size:10px; font-weight:700; letter-spacing:1.2px;
+      color:var(--t3); text-transform:uppercase;
     }
-
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 20px; margin: 1px 8px;
-      border-radius: var(--radius-sm);
-      cursor: pointer; color: var(--text2);
-      font-size: 13px; font-weight: 500;
-      transition: all .2s; user-select: none;
+    .nav-btn {
+      display:flex; align-items:center; gap:9px;
+      width:calc(100% - 16px); min-height:40px;
+      padding:9px 12px; margin:1px 8px;
+      border:none; border-radius:var(--r-sm);
+      background:transparent; color:var(--t2);
+      font-family:'Fira Sans',sans-serif;
+      font-size:13px; font-weight:500;
+      cursor:pointer; text-align:left;
+      transition:background 180ms var(--ease), color 180ms var(--ease), box-shadow 180ms var(--ease);
     }
-    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-    .nav-item.active {
-      background: var(--green-dim);
-      color: var(--green);
-      box-shadow: 0 0 0 1px rgba(0,230,118,0.2);
+    .nav-btn:hover { background:rgba(255,255,255,0.04); color:var(--t1); }
+    .nav-btn.active {
+      background:var(--green-dim); color:var(--green);
+      box-shadow:inset 3px 0 0 var(--green), 0 0 12px rgba(0,230,118,0.08);
     }
-    .nav-item .dot {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    .nav-btn.disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
+    .nav-dot {
+      width:8px; height:8px; border-radius:50%; flex-shrink:0;
+      transition:box-shadow 180ms var(--ease);
     }
-
+    .nav-btn.active .nav-dot { box-shadow:0 0 6px currentColor; }
+    .nav-count {
+      margin-left:auto;
+      background:rgba(255,255,255,0.07); color:var(--t3);
+      font-size:10px; font-family:'Fira Code',monospace;
+      padding:2px 6px; border-radius:8px;
+    }
+    .nav-btn.active .nav-count { background:rgba(0,230,118,0.15); color:var(--green); }
     .sidebar-footer {
-      margin-top: auto;
-      padding: 16px 20px 0;
-      border-top: 1px solid var(--border);
-      font-size: 11px; color: var(--text3);
-      line-height: 1.6;
+      margin-top:auto; padding:16px 18px 0;
+      border-top:1px solid var(--border);
+      font-size:11px; color:var(--t3); line-height:1.8;
     }
+    .sidebar-footer strong { color:var(--t2); }
 
-    /* ── MAIN ─────────────────────────────────────────── */
+    /* ── MAIN ───────────────────────────────────────────────── */
     .main {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      padding: 24px;
+      flex:1; overflow-y:auto;
+      display:flex; flex-direction:column; gap:18px;
+      padding:22px 24px 32px;
       background:
-        radial-gradient(ellipse 600px 400px at 100% -10%, rgba(0,230,118,0.06) 0%, transparent 70%),
-        radial-gradient(ellipse 400px 300px at 0% 60%, rgba(0,176,255,0.04) 0%, transparent 70%),
-        var(--bg);
+        radial-gradient(ellipse 700px 450px at 85% -5%,  rgba(0,230,118,0.05) 0%, transparent 65%),
+        radial-gradient(ellipse 500px 350px at 110% 55%, rgba(0,176,255,0.04) 0%, transparent 65%),
+        radial-gradient(ellipse 400px 300px at -10% 80%, rgba(179,136,255,0.03) 0%, transparent 65%),
+        var(--bg-void);
     }
 
-    /* ── TOPBAR ───────────────────────────────────────── */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
+    /* ── TOPBAR ─────────────────────────────────────────────── */
+    .topbar { display:flex; align-items:center; justify-content:space-between; }
+    .topbar h1 { font-size:21px; font-weight:700; letter-spacing:-.4px; color:var(--t1); }
+    .topbar p  { font-size:12px; color:var(--t2); margin-top:2px; }
+    .topbar-right { display:flex; align-items:center; gap:10px; }
+    .live-badge {
+      display:flex; align-items:center; gap:7px;
+      padding:6px 13px;
+      background:var(--green-dim);
+      border:1px solid rgba(0,230,118,0.25);
+      border-radius:20px; color:var(--green);
+      font-size:12px; font-weight:600;
     }
-    .topbar-left h1 {
-      font-size: 22px; font-weight: 700; color: var(--text);
-      letter-spacing: -0.5px;
-    }
-    .topbar-left p { font-size: 12px; color: var(--text2); margin-top: 2px; }
-    .topbar-right { display: flex; align-items: center; gap: 10px; }
-    .badge {
-      padding: 6px 14px; border-radius: 20px;
-      background: var(--green-dim);
-      border: 1px solid rgba(0,230,118,0.25);
-      color: var(--green); font-size: 12px; font-weight: 600;
-    }
-    .badge-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-      display: inline-block; margin-right: 6px;
-      animation: pulse 2s infinite;
+    .pulse-dot {
+      width:7px; height:7px; border-radius:50%; background:var(--green);
+      animation:pulse 2.4s ease-in-out infinite;
     }
     @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.4; transform: scale(0.8); }
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(.75); }
     }
-    .update-info {
-      font-size: 12px; color: var(--text2);
-      background: var(--card); border: 1px solid var(--border);
-      padding: 6px 14px; border-radius: 20px;
+    @media(prefers-reduced-motion:reduce) { .pulse-dot { animation:none; } }
+    .date-chip {
+      display:flex; align-items:center; gap:6px;
+      padding:6px 13px;
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:20px; color:var(--t2); font-size:12px;
     }
 
-    /* ── KPI CARDS ────────────────────────────────────── */
-    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-
+    /* ── KPI CARDS ──────────────────────────────────────────── */
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
     .kpi-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      position: relative; overflow: hidden;
-      transition: transform .2s, box-shadow .2s;
-      cursor: default;
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--r); padding:20px 20px 18px;
+      position:relative; overflow:hidden; cursor:default;
+      transition:transform 200ms var(--ease), box-shadow 200ms var(--ease), border-color 200ms var(--ease);
     }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    .kpi-card:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,.5); border-color:rgba(255,255,255,0.12); }
+    .kpi-card::after {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      border-radius:var(--r) var(--r) 0 0;
     }
-    .kpi-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    }
-    .kpi-card.green::before  { background: linear-gradient(90deg, var(--green), transparent); }
-    .kpi-card.blue::before   { background: linear-gradient(90deg, #00b0ff, transparent); }
-    .kpi-card.purple::before { background: linear-gradient(90deg, #b388ff, transparent); }
-    .kpi-card.yellow::before { background: linear-gradient(90deg, var(--yellow), transparent); }
-    .kpi-card.red::before    { background: linear-gradient(90deg, var(--red), transparent); }
-
-    .kpi-label {
-      font-size: 11px; font-weight: 600; letter-spacing: .5px;
-      color: var(--text2); text-transform: uppercase; margin-bottom: 10px;
-      display: flex; align-items: center; gap: 6px;
-    }
+    .kpi-card.c-green::after  { background:linear-gradient(90deg,var(--green),transparent); }
+    .kpi-card.c-cyan::after   { background:linear-gradient(90deg,var(--cyan),transparent); }
+    .kpi-card.c-purple::after { background:linear-gradient(90deg,var(--purple),transparent); }
+    .kpi-card.c-yellow::after { background:linear-gradient(90deg,var(--yellow),transparent); }
+    .kpi-card.c-green  { box-shadow:inset 0 0 40px rgba(0,230,118,0.04); }
+    .kpi-card.c-cyan   { box-shadow:inset 0 0 40px rgba(0,212,255,0.04); }
+    .kpi-card.c-purple { box-shadow:inset 0 0 40px rgba(179,136,255,0.04); }
+    .kpi-card.c-yellow { box-shadow:inset 0 0 40px rgba(255,215,64,0.04); }
+    .kpi-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
     .kpi-icon {
-      width: 28px; height: 28px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
+      width:36px; height:36px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
-    .kpi-value {
-      font-size: 26px; font-weight: 800; letter-spacing: -1px;
-      line-height: 1; margin-bottom: 6px;
+    .kpi-label { font-size:11px; font-weight:600; letter-spacing:.6px; text-transform:uppercase; color:var(--t2); }
+    .kpi-num {
+      font-family:'Fira Code',monospace; font-variant-numeric:tabular-nums;
+      font-size:28px; font-weight:700; letter-spacing:-1px; line-height:1; margin-bottom:6px;
     }
-    .kpi-card.green  .kpi-value { color: var(--green); }
-    .kpi-card.blue   .kpi-value { color: #4fc3f7; }
-    .kpi-card.purple .kpi-value { color: #b388ff; }
-    .kpi-card.yellow .kpi-value { color: var(--yellow); }
-    .kpi-card.red    .kpi-value { color: var(--red); }
+    .kpi-card.c-green  .kpi-num { color:var(--green); text-shadow:var(--green-text); }
+    .kpi-card.c-cyan   .kpi-num { color:var(--cyan); }
+    .kpi-card.c-purple .kpi-num { color:var(--purple); }
+    .kpi-card.c-yellow .kpi-num { color:var(--yellow); }
+    .kpi-meta { font-size:11px; color:var(--t2); line-height:1.4; }
+    .kpi-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:3px 8px; border-radius:5px;
+      font-size:11px; font-weight:700;
+      font-family:'Fira Code',monospace; margin-top:8px;
+    }
+    .kpi-badge.down { background:var(--red-dim);    color:var(--red); }
+    .kpi-badge.flat { background:var(--yellow-dim); color:var(--yellow); }
+    .kpi-badge.up   { background:var(--green-dim);  color:var(--green); }
 
-    .kpi-sub {
-      font-size: 11px; color: var(--text2); margin-top: 4px;
-    }
-    .kpi-trend {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 7px; border-radius: 4px;
-      font-size: 11px; font-weight: 600; margin-top: 6px;
-    }
-    .kpi-trend.down { background: rgba(255,82,82,0.15); color: var(--red); }
-    .kpi-trend.flat { background: rgba(255,215,64,0.15); color: var(--yellow); }
-    .kpi-trend.up   { background: rgba(0,230,118,0.15); color: var(--green); }
-
-    /* ── CHARTS ROW ───────────────────────────────────── */
-    .charts-row { display: grid; gap: 14px; }
-    .charts-row.two-thirds { grid-template-columns: 2fr 1fr; }
-    .charts-row.half       { grid-template-columns: 1fr 1fr; }
-
+    /* ── CHART LAYOUT ───────────────────────────────────────── */
+    .row-main      { display:grid; grid-template-columns:2fr 1fr; gap:14px; }
+    .row-secondary { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .chart-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      position: relative;
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--r); padding:20px;
+      transition:border-color 200ms var(--ease);
     }
-    .chart-card-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px;
+    .chart-card:hover { border-color:rgba(255,255,255,0.11); }
+    .chart-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+    .chart-title  { font-size:14px; font-weight:600; color:var(--t1); line-height:1.2; }
+    .chart-sub    { font-size:11px; color:var(--t2); margin-top:3px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:3px 10px; border-radius:12px;
+      font-size:10px; font-weight:700; letter-spacing:.3px;
+      background:var(--green-dim); border:1px solid rgba(0,230,118,0.20);
+      color:var(--green); white-space:nowrap;
     }
-    .chart-card-title {
-      font-size: 14px; font-weight: 600; color: var(--text);
-    }
-    .chart-card-sub {
-      font-size: 11px; color: var(--text2); margin-top: 2px;
-    }
-    .chart-tag {
-      padding: 3px 10px; border-radius: 12px;
-      font-size: 10px; font-weight: 600; letter-spacing: .3px;
-      background: var(--green-dim); color: var(--green);
-      border: 1px solid rgba(0,230,118,0.2);
-    }
-    .canvas-wrap { position: relative; }
+    .chip.cyan   { background:var(--cyan-dim);   border-color:rgba(0,212,255,.2);   color:var(--cyan); }
+    .chip.yellow { background:var(--yellow-dim); border-color:rgba(255,215,64,.2);  color:var(--yellow); }
 
-    /* ── TABLE ────────────────────────────────────────── */
-    .table-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
+    /* ── TABLE ──────────────────────────────────────────────── */
+    .table-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+    .table-toolbar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 20px 14px; border-bottom:1px solid var(--border);
     }
-    .table-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 20px 0;
-      margin-bottom: 16px;
+    .table-title { font-size:14px; font-weight:600; }
+    .search-wrap {
+      display:flex; align-items:center; gap:8px;
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:var(--r-sm); padding:7px 12px;
+      transition:border-color 180ms var(--ease);
     }
-    .table-title { font-size: 14px; font-weight: 600; }
-    .search-box {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--card2); border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 7px 12px;
+    .search-wrap:focus-within {
+      border-color:rgba(0,230,118,0.35);
+      box-shadow:0 0 0 3px rgba(0,230,118,0.08);
     }
-    .search-box input {
-      background: none; border: none; outline: none;
-      color: var(--text); font-size: 12px; font-family: inherit;
-      width: 180px;
+    .search-wrap input {
+      background:none; border:none; outline:none;
+      color:var(--t1); font-family:'Fira Sans',sans-serif;
+      font-size:12px; width:190px;
     }
-    .search-box input::placeholder { color: var(--text3); }
+    .search-wrap input::placeholder { color:var(--t3); }
+    .dtable { width:100%; border-collapse:collapse; }
+    .dtable thead tr { border-bottom:1px solid var(--border); }
+    .dtable th {
+      padding:9px 14px; text-align:left; white-space:nowrap;
+      font-size:10px; font-weight:700; letter-spacing:.7px;
+      text-transform:uppercase; color:var(--t3);
+      cursor:pointer; user-select:none;
+      transition:color 150ms var(--ease);
+    }
+    .dtable th:hover { color:var(--t2); }
+    .dtable th[aria-sort="ascending"],
+    .dtable th[aria-sort="descending"] { color:var(--green); }
+    .sort-icon { margin-left:4px; font-size:9px; }
+    .dtable tbody tr {
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      transition:background 140ms var(--ease);
+    }
+    .dtable tbody tr:hover { background:rgba(255,255,255,0.025); }
+    .dtable tbody tr:last-child { border-bottom:none; }
+    .dtable td { padding:11px 14px; font-size:12px; }
+    .gbadge {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:3px 8px; border-radius:8px;
+      font-size:10px; font-weight:700;
+    }
+    .gbadge-dot { width:6px; height:6px; border-radius:50%; }
+    .td-price { font-family:'Fira Code',monospace; font-weight:600; color:var(--t1); }
+    .td-open  { font-family:'Fira Code',monospace; color:var(--t2); }
+    .td-var   { font-family:'Fira Code',monospace; font-weight:700; }
+    .td-var.neg  { color:var(--red); }
+    .td-var.flat { color:var(--yellow); }
+    .td-var.pos  { color:var(--green); }
+    .td-muted  { font-family:'Fira Code',monospace; color:var(--t3); font-size:11px; }
+    .td-source { color:var(--t3); font-size:11px; max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .td-name   { font-weight:600; color:var(--t1); max-width:190px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pbar { width:64px; height:4px; border-radius:2px; background:rgba(255,255,255,0.07); overflow:hidden; }
+    .pbar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--green),var(--cyan)); transition:width 500ms var(--ease); }
+    .icon { display:inline-block; flex-shrink:0; }
 
-    .data-table { width: 100%; border-collapse: collapse; }
-    .data-table thead tr {
-      border-bottom: 1px solid var(--border);
-    }
-    .data-table th {
-      padding: 10px 16px;
-      text-align: left; font-size: 10px; font-weight: 600;
-      letter-spacing: .5px; text-transform: uppercase;
-      color: var(--text3); cursor: pointer; white-space: nowrap;
-      user-select: none;
-    }
-    .data-table th:hover { color: var(--text2); }
-    .data-table th.sorted { color: var(--green); }
-    .data-table th .sort-arrow { margin-left: 4px; }
-
-    .data-table tbody tr {
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      transition: background .15s;
-    }
-    .data-table tbody tr:hover { background: rgba(255,255,255,0.025); }
-    .data-table tbody tr:last-child { border-bottom: none; }
-    .data-table td {
-      padding: 11px 16px; font-size: 12px; color: var(--text);
-      white-space: nowrap;
-    }
-
-    .grupo-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 9px; border-radius: 10px;
-      font-size: 10px; font-weight: 600;
-    }
-    .grupo-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-
-    .price-cell { font-weight: 700; font-variant-numeric: tabular-nums; }
-    .var-cell { font-weight: 700; font-size: 12px; }
-    .var-cell.neg { color: var(--red); }
-    .var-cell.flat { color: var(--yellow); }
-    .var-cell.pos  { color: var(--green); }
-
-    .sparkbar {
-      display: inline-block;
-      width: 60px; height: 4px; border-radius: 2px;
-      background: var(--border);
-      position: relative; vertical-align: middle;
-    }
-    .sparkbar-fill {
-      position: absolute; left: 0; top: 0; bottom: 0;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--green), #00b0ff);
-    }
-
-    /* ── SCROLLBAR ────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #2a3347; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3a4357; }
-
-    /* ── RESPONSIVE ───────────────────────────────────── */
-    @media (max-width: 1100px) {
-      .kpi-row { grid-template-columns: repeat(2,1fr); }
-      .charts-row.two-thirds { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 800px) {
-      .sidebar { display: none; }
-      .charts-row.half { grid-template-columns: 1fr; }
-    }
+    /* ── RESPONSIVE ─────────────────────────────────────────── */
+    @media(max-width:1280px) { .row-main { grid-template-columns:1fr; } .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:900px)  { .sidebar { display:none; } .row-secondary { grid-template-columns:1fr; } }
+    @media(max-width:600px)  { .kpi-grid { grid-template-columns:1fr; } .main { padding:16px; } }
   </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- ══ SIDEBAR ══════════════════════════════════════ -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-icon">⚗</div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Navegação principal">
+    <div class="sidebar-logo">
+      <div class="logo-mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#080C12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3h6M9 3v7l-5 9a1 1 0 0 0 .9 1.5h14.2a1 1 0 0 0 .9-1.5L15 10V3"/>
+          <path d="M7.5 18h9"/>
+        </svg>
+      </div>
       <div>
-        Meridional TCS
-        <span class="logo-sub">Compras / Químicos</span>
+        <div class="logo-name">Meridional TCS</div>
+        <div class="logo-sub">Cotações · Compras</div>
       </div>
     </div>
 
-    <div class="nav-section">Dashboards</div>
-    <div class="nav-item active" onclick="filterGroup('Todos')">
-      <span style="font-size:15px">📊</span> Cotações
-    </div>
-    <div class="nav-item" style="opacity:.45; cursor:not-allowed;">
-      <span style="font-size:15px">📈</span> Análise Avançada
-    </div>
-    <div class="nav-item" style="opacity:.45; cursor:not-allowed;">
-      <span style="font-size:15px">📋</span> Histórico
-    </div>
+    <div class="nav-label">Dashboards</div>
+    <button class="nav-btn active" aria-current="page" style="cursor:default">
+      <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      Cotações
+    </button>
+    <button class="nav-btn disabled" aria-disabled="true">
+      <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Análise Avançada
+    </button>
 
-    <div class="nav-section">Filtrar por Grupo</div>
-    <div class="nav-item" id="nav-Todos" onclick="filterGroup('Todos')">
-      <span class="dot" style="background:#7a8899"></span> Todos os produtos
-    </div>
-    <div class="nav-item" id="nav-Ácidos" onclick="filterGroup('Ácidos')">
-      <span class="dot" style="background:#ff6b6b"></span> Ácidos
-    </div>
-    <div class="nav-item" id="nav-Álcoois" onclick="filterGroup('Álcoois')">
-      <span class="dot" style="background:#4fc3f7"></span> Álcoois
-    </div>
-    <div class="nav-item" id="nav-Outros Químicos" onclick="filterGroup('Outros Químicos')">
-      <span class="dot" style="background:#b388ff"></span> Outros Químicos
-    </div>
-    <div class="nav-item" id="nav-Polímeros/PEGs" onclick="filterGroup('Polímeros/PEGs')">
-      <span class="dot" style="background:#69f0ae"></span> Polímeros/PEGs
-    </div>
-    <div class="nav-item" id="nav-Tensoativos/Polisorbatos" onclick="filterGroup('Tensoativos/Polisorbatos')">
-      <span class="dot" style="background:#ffd740"></span> Tensoativos
-    </div>
-    <div class="nav-item" id="nav-Edulcorantes/Outros" onclick="filterGroup('Edulcorantes/Outros')">
-      <span class="dot" style="background:#26c6da"></span> Edulcorantes
-    </div>
+    <div class="nav-label">Filtrar por Grupo</div>
+    <button class="nav-btn" id="nb-Todos" onclick="setGroup('Todos')" aria-label="Todos os 20 produtos">
+      <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      Todos os Produtos <span class="nav-count">20</span>
+    </button>
+    <button class="nav-btn" id="nb-Ácidos" onclick="setGroup('Ácidos')">
+      <span class="nav-dot" style="background:var(--g-acidos)"></span>Ácidos<span class="nav-count">5</span>
+    </button>
+    <button class="nav-btn" id="nb-Álcoois" onclick="setGroup('Álcoois')">
+      <span class="nav-dot" style="background:var(--g-alcoois)"></span>Álcoois<span class="nav-count">3</span>
+    </button>
+    <button class="nav-btn" id="nb-Outros Químicos" onclick="setGroup('Outros Químicos')">
+      <span class="nav-dot" style="background:var(--g-outros)"></span>Outros Químicos<span class="nav-count">6</span>
+    </button>
+    <button class="nav-btn" id="nb-Polímeros/PEGs" onclick="setGroup('Polímeros/PEGs')">
+      <span class="nav-dot" style="background:var(--g-pegs)"></span>Polímeros/PEGs<span class="nav-count">2</span>
+    </button>
+    <button class="nav-btn" id="nb-Tensoativos/Polisorbatos" onclick="setGroup('Tensoativos/Polisorbatos')">
+      <span class="nav-dot" style="background:var(--g-tens)"></span>Tensoativos<span class="nav-count">3</span>
+    </button>
+    <button class="nav-btn" id="nb-Edulcorantes/Outros" onclick="setGroup('Edulcorantes/Outros')">
+      <span class="nav-dot" style="background:var(--g-edul)"></span>Edulcorantes<span class="nav-count">1</span>
+    </button>
 
-    <div class="sidebar-footer">
-      🗓 Período:<br>20/03/2026 – 10/04/2026<br><br>
-      📦 20 produtos<br>
-      📅 15 dias úteis<br>
-      💱 Moeda: BRL
+    <div class="sidebar-footer" role="contentinfo">
+      <strong>Período</strong><br>20/03/2026 – 10/04/2026<br>15 dias úteis<br><br>
+      <strong>Portfólio</strong><br>20 produtos · 6 grupos<br>Moeda: BRL
     </div>
   </aside>
 
-  <!-- ══ MAIN ══════════════════════════════════════════ -->
-  <main class="main">
+  <!-- MAIN -->
+  <main class="main" id="main-content">
 
     <!-- TOPBAR -->
-    <div class="topbar">
-      <div class="topbar-left">
+    <header class="topbar">
+      <div>
         <h1>Dashboard de Cotações — Químicos</h1>
-        <p>Acompanhamento de preços para o time de Compras</p>
+        <p>Monitoramento de preços para o Time de Compras · Meridional TCS</p>
       </div>
       <div class="topbar-right">
-        <div class="badge"><span class="badge-dot"></span>Ao vivo</div>
-        <div class="update-info">📅 Última cotação: <strong>10/04/2026</strong></div>
+        <div class="live-badge" role="status" aria-live="polite">
+          <span class="pulse-dot" aria-hidden="true"></span>Ao vivo
+        </div>
+        <div class="date-chip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Última cotação: <strong>10/04/2026</strong>
+        </div>
       </div>
-    </div>
+    </header>
 
     <!-- KPI CARDS -->
-    <div class="kpi-row">
-      <div class="kpi-card green">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background:rgba(0,230,118,0.12); font-size:16px">💰</div>
-          Preço Médio do Portfólio
+    <section class="kpi-grid" aria-label="Indicadores-chave">
+
+      <div class="kpi-card c-green">
+        <div class="kpi-header">
+          <span class="kpi-label">Preço Médio · Portfólio</span>
+          <div class="kpi-icon" style="background:var(--green-dim)" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
         </div>
-        <div class="kpi-value" id="kpi-avg">R$ 9.194</div>
-        <div class="kpi-sub">por tonelada métrica (MT)</div>
-        <div class="kpi-trend down">↓ −3,4% no período</div>
+        <div class="kpi-num" id="kpi-avg">R$ 0</div>
+        <div class="kpi-meta">por tonelada métrica (BRL/MT)</div>
+        <div class="kpi-badge down">↓ −3,42% no período</div>
       </div>
 
-      <div class="kpi-card purple">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background:rgba(179,136,255,0.12); font-size:16px">🔝</div>
-          Produto Mais Caro
+      <div class="kpi-card c-purple">
+        <div class="kpi-header">
+          <span class="kpi-label">Produto Mais Caro</span>
+          <div class="kpi-icon" style="background:var(--purple-dim)" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B388FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+          </div>
         </div>
-        <div class="kpi-value" style="font-size:18px">R$ 15.240</div>
-        <div class="kpi-sub">Molecular Sieve 3A Powder</div>
-        <div class="kpi-trend down">↓ −3,4% vs abertura</div>
+        <div class="kpi-num num" style="font-size:22px;color:var(--purple)">R$ 15.240</div>
+        <div class="kpi-meta">Molecular Sieve 3A Powder<br>Outros Químicos · MT</div>
+        <div class="kpi-badge down">↓ −3,42% vs abertura</div>
       </div>
 
-      <div class="kpi-card blue">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background:rgba(0,176,255,0.12); font-size:16px">📉</div>
-          Produto Mais Barato (MT)
+      <div class="kpi-card c-cyan">
+        <div class="kpi-header">
+          <span class="kpi-label">Mais Barato (MT)</span>
+          <div class="kpi-icon" style="background:var(--cyan-dim)" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
         </div>
-        <div class="kpi-value" style="font-size:18px">R$ 4.826</div>
-        <div class="kpi-sub">Ácido Bórico</div>
-        <div class="kpi-trend down">↓ −3,4% vs abertura</div>
+        <div class="kpi-num num" style="font-size:22px;color:var(--cyan)">R$ 4.826</div>
+        <div class="kpi-meta">Ácido Bórico<br>Ácidos · MT</div>
+        <div class="kpi-badge down">↓ −3,42% vs abertura</div>
       </div>
 
-      <div class="kpi-card yellow">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background:rgba(255,215,64,0.12); font-size:16px">📊</div>
-          Único Produto Estável
+      <div class="kpi-card c-yellow">
+        <div class="kpi-header">
+          <span class="kpi-label">Único Estável</span>
+          <div class="kpi-icon" style="background:var(--yellow-dim)" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD740" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
         </div>
-        <div class="kpi-value" style="font-size:18px">R$ 3.990</div>
-        <div class="kpi-sub">Sorbitol 70 — Drum 300kg</div>
-        <div class="kpi-trend flat">→ 0,00% sem variação</div>
+        <div class="kpi-num num" style="font-size:22px;color:var(--yellow)">R$ 3.990</div>
+        <div class="kpi-meta">Sorbitol 70<br>Edulcorantes · Drum 300kg</div>
+        <div class="kpi-badge flat">→ 0,00% sem variação</div>
       </div>
-    </div>
+
+    </section>
 
     <!-- CHARTS ROW 1 -->
-    <div class="charts-row two-thirds">
-
-      <!-- LINE CHART -->
+    <section class="row-main">
       <div class="chart-card">
-        <div class="chart-card-header">
+        <div class="chart-header">
           <div>
-            <div class="chart-card-title">📈 Evolução de Preços — Série Histórica</div>
-            <div class="chart-card-sub" id="line-subtitle">20 produtos · 20/03 – 10/04/2026</div>
+            <div class="chart-title">Evolução de Preços — Série Histórica</div>
+            <div class="chart-sub" id="line-sub">20 produtos · 20/03 – 10/04/2026 · BRL</div>
           </div>
-          <div class="chart-tag" id="line-tag">BRL / MT</div>
+          <span class="chip">BRL / MT</span>
         </div>
-        <div class="canvas-wrap"><canvas id="lineChart" height="210"></canvas></div>
+        <div class="canvas-wrap">
+          <canvas id="lineChart" height="230" role="img" aria-label="Evolução histórica de preços dos produtos químicos"></canvas>
+        </div>
       </div>
 
-      <!-- DONUT CHART -->
       <div class="chart-card">
-        <div class="chart-card-header">
+        <div class="chart-header">
           <div>
-            <div class="chart-card-title">🍩 Preço Médio por Grupo</div>
-            <div class="chart-card-sub">Última cotação</div>
+            <div class="chart-title">Preço Médio por Grupo</div>
+            <div class="chart-sub">Última cotação — 10/04/2026</div>
           </div>
+          <span class="chip cyan">6 grupos</span>
         </div>
-        <div class="canvas-wrap"><canvas id="donutChart" height="210"></canvas></div>
+        <div class="canvas-wrap">
+          <canvas id="donutChart" height="230" role="img" aria-label="Distribuição de preço médio por grupo"></canvas>
+        </div>
       </div>
-
-    </div>
+    </section>
 
     <!-- CHARTS ROW 2 -->
-    <div class="charts-row half">
-
-      <!-- BAR: current prices -->
+    <section class="row-secondary">
       <div class="chart-card">
-        <div class="chart-card-header">
+        <div class="chart-header">
           <div>
-            <div class="chart-card-title">📊 Ranking de Preços Atuais</div>
-            <div class="chart-card-sub">10/04/2026 · R$/MT</div>
+            <div class="chart-title">Ranking de Preços Atuais</div>
+            <div class="chart-sub">10/04/2026 · ordenado decrescente</div>
           </div>
-          <div class="chart-tag">Ordenado ↓</div>
+          <span class="chip">R$/unid.</span>
         </div>
-        <div class="canvas-wrap"><canvas id="barChart" height="240"></canvas></div>
+        <div class="canvas-wrap">
+          <canvas id="barChart" height="260" role="img" aria-label="Ranking de preços atuais por produto"></canvas>
+        </div>
       </div>
 
-      <!-- BAR: variation % -->
       <div class="chart-card">
-        <div class="chart-card-header">
+        <div class="chart-header">
           <div>
-            <div class="chart-card-title">🔄 Variação % no Período</div>
-            <div class="chart-card-sub">20/03 → 10/04/2026</div>
+            <div class="chart-title">Variação % no Período</div>
+            <div class="chart-sub">20/03 → 10/04/2026</div>
           </div>
-          <div class="chart-tag">20/03 → 10/04</div>
+          <span class="chip yellow">20/03 → 10/04</span>
         </div>
-        <div class="canvas-wrap"><canvas id="varChart" height="240"></canvas></div>
+        <div class="canvas-wrap">
+          <canvas id="varChart" height="260" role="img" aria-label="Variação percentual no período por produto"></canvas>
+        </div>
       </div>
-
-    </div>
+    </section>
 
     <!-- TABLE -->
-    <div class="table-card">
-      <div class="table-header">
-        <div class="table-title">📋 Tabela Completa de Cotações</div>
-        <div class="search-box">
-          <span style="color:var(--text3)">🔍</span>
-          <input type="text" id="searchInput" placeholder="Buscar produto..." oninput="renderTable()" />
+    <section class="table-card" aria-label="Tabela completa de cotações">
+      <div class="table-toolbar">
+        <div class="table-title">
+          <svg style="vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Tabela Completa de Cotações
         </div>
+        <label class="search-wrap" for="searchInput">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--t3)">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="search" id="searchInput" placeholder="Buscar produto ou grupo…" autocomplete="off" spellcheck="false" oninput="renderTable()" />
+        </label>
       </div>
       <div style="overflow-x:auto">
-        <table class="data-table">
+        <table class="dtable" role="grid" aria-label="Cotações de produtos químicos">
           <thead>
             <tr>
-              <th onclick="sortTable('item')" id="th-item">Produto <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('grupo')" id="th-grupo">Grupo <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('preco')" id="th-preco" class="sorted">Preço Atual <span class="sort-arrow">↓</span></th>
-              <th onclick="sortTable('abertura')" id="th-abertura">Abertura <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('var')" id="th-var">Variação % <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('min')" id="th-min">Mínimo <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('max')" id="th-max">Máximo <span class="sort-arrow">↕</span></th>
-              <th onclick="sortTable('amp')" id="th-amp">Amplitude <span class="sort-arrow">↕</span></th>
-              <th>Unidade</th>
-              <th>Fonte</th>
-              <th>Barra</th>
+              <th onclick="doSort('item')"     id="th-item"     aria-sort="none" scope="col">Produto <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('grupo')"    id="th-grupo"    aria-sort="none" scope="col">Grupo <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('preco')"    id="th-preco"    aria-sort="descending" scope="col">Preço Atual <span class="sort-icon" aria-hidden="true">↓</span></th>
+              <th onclick="doSort('abertura')" id="th-abertura" aria-sort="none" scope="col">Abertura <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('var')"      id="th-var"      aria-sort="none" scope="col">Var % <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('min')"      id="th-min"      aria-sort="none" scope="col">Mín <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('max')"      id="th-max"      aria-sort="none" scope="col">Máx <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th onclick="doSort('amp')"      id="th-amp"      aria-sort="none" scope="col">Amplitude <span class="sort-icon" aria-hidden="true">↕</span></th>
+              <th scope="col">Unidade</th>
+              <th scope="col">Fonte</th>
+              <th scope="col">Peso</th>
             </tr>
           </thead>
-          <tbody id="tableBody"></tbody>
+          <tbody id="tBody"></tbody>
         </table>
       </div>
-    </div>
+    </section>
 
   </main>
 </div>
 
 <script>
-/* ════════════════════════════════════════════════════
-   DATA
-   ════════════════════════════════════════════════════ */
-const DATES = [
-  '20/03','23/03','24/03','25/03','26/03','27/03',
-  '30/03','31/03','01/04','02/04','06/04','07/04',
-  '08/04','09/04','10/04'
-];
-
+/* DATA */
+const DATES = ['20/03','23/03','24/03','25/03','26/03','27/03','30/03','31/03','01/04','02/04','06/04','07/04','08/04','09/04','10/04'];
 const PRODUCTS = [
-  { item:'ACIDO BORICO',                 grupo:'Ácidos',                 fonte:'IMARC/BusinessAnalytiq',           unidade:'MT',         prices:[4997,5025.5,4997,4987.5,4968.5,4968.5,4978,4978,4959,4902,4902,4892.5,4892.5,4845,4826] },
-  { item:'ACIDO CAPRICO C10',            grupo:'Ácidos',                 fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[9468,9522,9468,9450,9414,9414,9432,9432,9396,9288,9288,9270,9270,9180,9144] },
-  { item:'ACIDO CAPRILICO C18',          grupo:'Ácidos',                 fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[11572,11638,11572,11550,11506,11506,11528,11528,11484,11352,11352,11330,11330,11220,11176] },
-  { item:'ACIDO OLEICO',                 grupo:'Ácidos',                 fonte:'Trading Economics (Palm Oil Index)',unidade:'MT',         prices:[7101,7141.5,7101,7087.5,7060.5,7060.5,7074,7074,7047,6966,6966,6952.5,6952.5,6885,6858] },
-  { item:'ACIDO PALMITICO (MI - EVONIK)',grupo:'Ácidos',                 fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[7890,7935,7890,7875,7845,7845,7860,7860,7830,7740,7740,7725,7725,7650,7620] },
-  { item:'ALCOOL CETILICO',              grupo:'Álcoois',                fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[8416,8464,8416,8400,8368,8368,8384,8384,8352,8256,8256,8240,8240,8160,8128] },
-  { item:'ALCOOL CETOESTEARILICO',       grupo:'Álcoois',                fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[8942,8993,8942,8925,8891,8891,8908,8908,8874,8772,8772,8755,8755,8670,8636] },
-  { item:'ALCOOL CETOESTEARILICO 20 EO', grupo:'Álcoois',                fonte:'Estimativa (Oleoquímico)',          unidade:'MT',         prices:[10520,10580,10520,10500,10460,10460,10480,10480,10440,10320,10320,10300,10300,10200,10160] },
-  { item:'CLORETO DE BENZILA',           grupo:'Outros Químicos',        fonte:'Estimativa',                       unidade:'MT',         prices:[5786,5819,5786,5775,5753,5753,5764,5764,5742,5676,5676,5665,5665,5610,5588] },
-  { item:'DMAPA',                        grupo:'Outros Químicos',        fonte:'ChemAnalyst (Trend)',               unidade:'MT',         prices:[9731,9786.5,9731,9712.5,9675.5,9675.5,9694,9694,9657,9546,9546,9527.5,9527.5,9435,9398] },
-  { item:'MIRISTATO DE ISOPROPILA',      grupo:'Outros Químicos',        fonte:'Estimativa',                       unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700] },
-  { item:'MOLECULAR SIEVE 3A POWDER',    grupo:'Outros Químicos',        fonte:'Estimativa',                       unidade:'MT',         prices:[15780,15870,15780,15750,15690,15690,15720,15720,15660,15480,15480,15450,15450,15300,15240] },
-  { item:'PALMITATO DE ISOPROPILA',      grupo:'Outros Químicos',        fonte:'Estimativa',                       unidade:'MT',         prices:[12624,12696,12624,12600,12552,12552,12576,12576,12528,12384,12384,12360,12360,12240,12192] },
-  { item:'PEG 3350 - POLIETILENOGLICOL', grupo:'Polímeros/PEGs',         fonte:'ChemAnalyst',                      unidade:'MT',         prices:[6838,6877,6838,6825,6799,6799,6812,6812,6786,6708,6708,6695,6695,6630,6604] },
-  { item:'PEG 4000 - POLIETILENOGLICOL', grupo:'Polímeros/PEGs',         fonte:'ChemAnalyst',                      unidade:'MT',         prices:[7153.6,7194.4,7153.6,7140,7112.8,7112.8,7126.4,7126.4,7099.2,7017.6,7017.6,7004,7004,6936,6908.8] },
-  { item:'POLISORBATO 20',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',          unidade:'MT',         prices:[11046,11109,11046,11025,10983,10983,11004,11004,10962,10836,10836,10815,10815,10710,10668] },
-  { item:'POLISORBATO 60',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',          unidade:'MT',         prices:[12098,12167,12098,12075,12029,12029,12052,12052,12006,11868,11868,11845,11845,11730,11684] },
-  { item:'POLISORBATO 80',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',          unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700] },
-  { item:'SMCA',                         grupo:'Outros Químicos',        fonte:'Estimativa',                       unidade:'MT',         prices:[9994,10051,9994,9975,9937,9937,9956,9956,9918,9804,9804,9785,9785,9690,9652] },
-  { item:'SORBITOL 70',                  grupo:'Edulcorantes/Outros',    fonte:'Quimisul/B2B',                     unidade:'Drum 300kg', prices:[3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990] },
+  {item:'ACIDO BORICO',                 grupo:'Ácidos',                  fonte:'IMARC/BusinessAnalytiq',            unidade:'MT',         prices:[4997,5025.5,4997,4987.5,4968.5,4968.5,4978,4978,4959,4902,4902,4892.5,4892.5,4845,4826]},
+  {item:'ACIDO CAPRICO C10',            grupo:'Ácidos',                  fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[9468,9522,9468,9450,9414,9414,9432,9432,9396,9288,9288,9270,9270,9180,9144]},
+  {item:'ACIDO CAPRILICO C18',          grupo:'Ácidos',                  fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[11572,11638,11572,11550,11506,11506,11528,11528,11484,11352,11352,11330,11330,11220,11176]},
+  {item:'ACIDO OLEICO',                 grupo:'Ácidos',                  fonte:'Trading Economics (Palm Oil Index)',unidade:'MT',          prices:[7101,7141.5,7101,7087.5,7060.5,7060.5,7074,7074,7047,6966,6966,6952.5,6952.5,6885,6858]},
+  {item:'ACIDO PALMITICO (MI - EVONIK)',grupo:'Ácidos',                  fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[7890,7935,7890,7875,7845,7845,7860,7860,7830,7740,7740,7725,7725,7650,7620]},
+  {item:'ALCOOL CETILICO',              grupo:'Álcoois',                 fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[8416,8464,8416,8400,8368,8368,8384,8384,8352,8256,8256,8240,8240,8160,8128]},
+  {item:'ALCOOL CETOESTEARILICO',       grupo:'Álcoois',                 fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[8942,8993,8942,8925,8891,8891,8908,8908,8874,8772,8772,8755,8755,8670,8636]},
+  {item:'ALCOOL CETOESTEARILICO 20 EO', grupo:'Álcoois',                 fonte:'Estimativa (Oleoquímico)',           unidade:'MT',         prices:[10520,10580,10520,10500,10460,10460,10480,10480,10440,10320,10320,10300,10300,10200,10160]},
+  {item:'CLORETO DE BENZILA',           grupo:'Outros Químicos',         fonte:'Estimativa',                        unidade:'MT',         prices:[5786,5819,5786,5775,5753,5753,5764,5764,5742,5676,5676,5665,5665,5610,5588]},
+  {item:'DMAPA',                        grupo:'Outros Químicos',         fonte:'ChemAnalyst (Trend)',                unidade:'MT',         prices:[9731,9786.5,9731,9712.5,9675.5,9675.5,9694,9694,9657,9546,9546,9527.5,9527.5,9435,9398]},
+  {item:'MIRISTATO DE ISOPROPILA',      grupo:'Outros Químicos',         fonte:'Estimativa',                        unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700]},
+  {item:'MOLECULAR SIEVE 3A POWDER',    grupo:'Outros Químicos',         fonte:'Estimativa',                        unidade:'MT',         prices:[15780,15870,15780,15750,15690,15690,15720,15720,15660,15480,15480,15450,15450,15300,15240]},
+  {item:'PALMITATO DE ISOPROPILA',      grupo:'Outros Químicos',         fonte:'Estimativa',                        unidade:'MT',         prices:[12624,12696,12624,12600,12552,12552,12576,12576,12528,12384,12384,12360,12360,12240,12192]},
+  {item:'PEG 3350 - POLIETILENOGLICOL', grupo:'Polímeros/PEGs',          fonte:'ChemAnalyst',                       unidade:'MT',         prices:[6838,6877,6838,6825,6799,6799,6812,6812,6786,6708,6708,6695,6695,6630,6604]},
+  {item:'PEG 4000 - POLIETILENOGLICOL', grupo:'Polímeros/PEGs',          fonte:'ChemAnalyst',                       unidade:'MT',         prices:[7153.6,7194.4,7153.6,7140,7112.8,7112.8,7126.4,7126.4,7099.2,7017.6,7017.6,7004,7004,6936,6908.8]},
+  {item:'POLISORBATO 20',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',            unidade:'MT',         prices:[11046,11109,11046,11025,10983,10983,11004,11004,10962,10836,10836,10815,10815,10710,10668]},
+  {item:'POLISORBATO 60',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',            unidade:'MT',         prices:[12098,12167,12098,12075,12029,12029,12052,12052,12006,11868,11868,11845,11845,11730,11684]},
+  {item:'POLISORBATO 80',               grupo:'Tensoativos/Polisorbatos',fonte:'Estimativa (Tensoativo)',            unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700]},
+  {item:'SMCA',                         grupo:'Outros Químicos',         fonte:'Estimativa',                        unidade:'MT',         prices:[9994,10051,9994,9975,9937,9937,9956,9956,9918,9804,9804,9785,9785,9690,9652]},
+  {item:'SORBITOL 70',                  grupo:'Edulcorantes/Outros',     fonte:'Quimisul/B2B',                      unidade:'Drum 300kg', prices:[3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990]},
 ];
 
-/* ════════════════════════════════════════════════════
-   COLORS
-   ════════════════════════════════════════════════════ */
-const GROUP_COLORS = {
-  'Ácidos':                  { bg:'rgba(255,107,107,0.15)', border:'#ff6b6b',  solid:'#ff6b6b'  },
-  'Álcoois':                 { bg:'rgba(79,195,247,0.15)',  border:'#4fc3f7',  solid:'#4fc3f7'  },
-  'Outros Químicos':         { bg:'rgba(179,136,255,0.15)',border:'#b388ff',  solid:'#b388ff'  },
-  'Polímeros/PEGs':          { bg:'rgba(105,240,174,0.15)',border:'#69f0ae',  solid:'#69f0ae'  },
-  'Tensoativos/Polisorbatos':{ bg:'rgba(255,215,64,0.15)',  border:'#ffd740',  solid:'#ffd740'  },
-  'Edulcorantes/Outros':     { bg:'rgba(38,198,218,0.15)',  border:'#26c6da',  solid:'#26c6da'  },
+/* COLORS */
+const GC = {
+  'Ácidos':                  {s:'#FF6B6B',bg:'rgba(255,107,107,0.12)'},
+  'Álcoois':                 {s:'#4FC3F7',bg:'rgba(79,195,247,0.12)'},
+  'Outros Químicos':         {s:'#B388FF',bg:'rgba(179,136,255,0.12)'},
+  'Polímeros/PEGs':          {s:'#69F0AE',bg:'rgba(105,240,174,0.12)'},
+  'Tensoativos/Polisorbatos':{s:'#FFD740',bg:'rgba(255,215,64,0.12)'},
+  'Edulcorantes/Outros':     {s:'#26C6DA',bg:'rgba(38,198,218,0.12)'},
 };
-
-const PRODUCT_COLORS = [
-  '#ff6b6b','#ff8a80','#ff5252','#ff1744','#e53935',
-  '#42a5f5','#1e88e5','#1565c0',
-  '#ce93d8','#ba68c8','#ab47bc','#8e24aa','#6a1b9a','#9e9d24',
-  '#69f0ae','#43a047',
-  '#ffd740','#ffca28','#ff8f00',
-  '#26c6da',
+/* Per-product: color + borderDash (colorblind accessibility via line patterns) */
+const PC=[
+  {c:'#FF6B6B',d:[]},      {c:'#FF8C8C',d:[6,3]},    {c:'#E84141',d:[2,2]},
+  {c:'#C41F1F',d:[8,3,2,3]},{c:'#FF4D4D',d:[10,4]},
+  {c:'#4FC3F7',d:[]},      {c:'#0288D1',d:[6,3]},    {c:'#01579B',d:[2,2]},
+  {c:'#CE93D8',d:[]},      {c:'#9C27B0',d:[6,3]},    {c:'#7B1FA2',d:[2,2]},
+  {c:'#E040FB',d:[8,3,2,3]},{c:'#8E24AA',d:[10,4]},  {c:'#6A1B9A',d:[4,2,2,2]},
+  {c:'#69F0AE',d:[]},      {c:'#00E676',d:[6,3]},
+  {c:'#FFD740',d:[]},      {c:'#FFA000',d:[6,3]},    {c:'#FF6F00',d:[2,2]},
+  {c:'#26C6DA',d:[]},
 ];
 
-/* ════════════════════════════════════════════════════
-   HELPERS
-   ════════════════════════════════════════════════════ */
-const fmt   = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:1});
-const fmtN  = v => v.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2}) + '%';
-const last  = p => p.prices[p.prices.length - 1];
+/* HELPERS */
+const last  = p => p.prices[p.prices.length-1];
 const first = p => p.prices[0];
-const vari  = p => ((last(p) - first(p)) / first(p)) * 100;
 const minP  = p => Math.min(...p.prices);
 const maxP  = p => Math.max(...p.prices);
+const varP  = p => ((last(p)-first(p))/first(p))*100;
+const fmtBR = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:1});
+const fmtPct= v => (v>=0?'+':'')+v.toFixed(2)+'%';
 const maxLast = Math.max(...PRODUCTS.map(last));
 
-/* ════════════════════════════════════════════════════
-   STATE
-   ════════════════════════════════════════════════════ */
-let currentGroup = 'Todos';
-let sortKey      = 'preco';
-let sortAsc      = false;
-let charts       = {};
+/* STATE */
+let activeGroup='Todos', sortKey='preco', sortAsc=false;
+const charts={};
+const filtered = () => activeGroup==='Todos' ? PRODUCTS : PRODUCTS.filter(p=>p.grupo===activeGroup);
 
-function filtered() {
-  if (currentGroup === 'Todos') return PRODUCTS;
-  return PRODUCTS.filter(p => p.grupo === currentGroup);
+/* SIDEBAR */
+function setGroup(g) {
+  activeGroup=g;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('nb-'+g);
+  if(btn){btn.classList.add('active');btn.setAttribute('aria-current','page');}
+  rebuildAll(); renderTable();
 }
 
-/* ════════════════════════════════════════════════════
-   SIDEBAR FILTER
-   ════════════════════════════════════════════════════ */
-function filterGroup(g) {
-  currentGroup = g;
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const t = document.getElementById('nav-' + g) || document.querySelector('.nav-item');
-  if (t) t.classList.add('active');
-  updateAllCharts();
-  renderTable();
-}
+/* CHART.JS DEFAULTS */
+const T={void:'#080C12',card:'#111B2E',green:'#00E676',cyan:'#00D4FF',red:'#FF5252',yellow:'#FFD740',purple:'#B388FF',t1:'#EAF0FB',t2:'#7A90B5',t3:'#3D5273'};
+Chart.defaults.color='#7A90B5';
+Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+Chart.defaults.font.family="'Fira Sans',sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.plugins.legend.labels.boxWidth=10;
+Chart.defaults.plugins.legend.labels.boxHeight=10;
+Chart.defaults.plugins.legend.labels.padding=14;
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+Chart.defaults.plugins.legend.labels.pointStyle='circle';
+const TT={backgroundColor:'#162035',borderColor:'rgba(0,230,118,0.2)',borderWidth:1,padding:12,titleFont:{family:"'Fira Code',monospace",size:11},bodyFont:{family:"'Fira Sans',sans-serif",size:12},titleColor:'#7A90B5',bodyColor:'#EAF0FB',cornerRadius:8};
 
-/* ════════════════════════════════════════════════════
-   CHART.JS DEFAULTS
-   ════════════════════════════════════════════════════ */
-Chart.defaults.color          = '#7a8899';
-Chart.defaults.borderColor    = 'rgba(255,255,255,0.06)';
-Chart.defaults.font.family    = 'Inter';
-Chart.defaults.font.size      = 11;
-Chart.defaults.plugins.legend.labels.boxWidth  = 12;
-Chart.defaults.plugins.legend.labels.padding   = 14;
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
-Chart.defaults.plugins.legend.labels.pointStyle    = 'circle';
-
-/* ════════════════════════════════════════════════════
-   LINE CHART
-   ════════════════════════════════════════════════════ */
-function buildLine() {
-  const ctx = document.getElementById('lineChart').getContext('2d');
-  const data = filtered();
-
-  const datasets = data.map((p,i) => {
-    const ci = PRODUCTS.indexOf(p);
-    const col = PRODUCT_COLORS[ci];
+/* LINE CHART */
+function buildLine(){
+  const ctx=document.getElementById('lineChart').getContext('2d');
+  const data=filtered();
+  document.getElementById('line-sub').textContent=`${data.length} produto${data.length!==1?'s':''} · 20/03 – 10/04/2026 · BRL`;
+  const datasets=data.map(p=>{
+    const idx=PRODUCTS.indexOf(p); const col=PC[idx];
     return {
-      label: p.item.length > 22 ? p.item.slice(0,22)+'…' : p.item,
-      data: p.prices,
-      borderColor: col,
-      backgroundColor: col + '18',
-      borderWidth: 2,
-      tension: 0.4,
-      pointRadius: 0,
-      pointHoverRadius: 5,
-      pointHoverBackgroundColor: col,
-      fill: false,
+      label:p.item.length>22?p.item.slice(0,22)+'…':p.item,
+      data:p.prices, borderColor:col.c, backgroundColor:col.c+'15',
+      borderDash:col.d, borderWidth:1.8, tension:0.4,
+      pointRadius:0, pointHoverRadius:5,
+      pointHoverBackgroundColor:col.c, pointHoverBorderColor:'#080C12', pointHoverBorderWidth:2,
+      fill:false,
     };
   });
-
-  if (charts.line) charts.line.destroy();
-  charts.line = new Chart(ctx, {
-    type: 'line',
-    data: { labels: DATES, datasets },
-    options: {
-      responsive: true,
-      interaction: { mode:'index', intersect:false },
-      animation: { duration: 600, easing: 'easeInOutQuart' },
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color:'#7a8899', font:{ size:10 } }
-        },
-        tooltip: {
-          backgroundColor: '#1a2035',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          padding: 12,
-          callbacks: {
-            label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.parsed.y)
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color:'rgba(255,255,255,0.04)' },
-          ticks: { color:'#7a8899', maxRotation:0 }
-        },
-        y: {
-          grid: { color:'rgba(255,255,255,0.04)' },
-          ticks: {
-            color:'#7a8899',
-            callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k'
-          }
-        }
-      }
-    }
-  });
-}
-
-/* ════════════════════════════════════════════════════
-   DONUT CHART
-   ════════════════════════════════════════════════════ */
-function buildDonut() {
-  const ctx = document.getElementById('donutChart').getContext('2d');
-  const groups = [...new Set(filtered().map(p => p.grupo))];
-
-  const avgByGroup = groups.map(g => {
-    const items = filtered().filter(p => p.grupo === g);
-    return items.reduce((s,p) => s + last(p), 0) / items.length;
-  });
-
-  const colors = groups.map(g => GROUP_COLORS[g]?.solid || '#666');
-
-  if (charts.donut) charts.donut.destroy();
-  charts.donut = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: groups.map(g => g.replace('/Polisorbatos','').replace('/Outros','')),
-      datasets: [{
-        data: avgByGroup,
-        backgroundColor: groups.map(g => GROUP_COLORS[g]?.bg || 'rgba(100,100,100,0.15)'),
-        borderColor: colors,
-        borderWidth: 2,
-        hoverOffset: 8,
-      }]
+  if(charts.line)charts.line.destroy();
+  charts.line=new Chart(ctx,{type:'line',data:{labels:DATES,datasets},options:{
+    responsive:true, animation:{duration:500,easing:'easeInOutQuart'},
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'bottom',labels:{color:'#7A90B5',font:{size:10}}},
+      tooltip:{...TT,callbacks:{label:ctx=>'  '+(ctx.dataset.label||'')+':  '+fmtBR(ctx.parsed.y)}}
     },
-    options: {
-      responsive: true,
-      cutout: '68%',
-      animation: { duration:700, easing:'easeInOutQuart' },
-      plugins: {
-        legend: { position:'bottom', labels:{ color:'#7a8899', font:{size:10} } },
-        tooltip: {
-          backgroundColor:'#1a2035', borderColor:'rgba(255,255,255,0.1)',
-          borderWidth:1, padding:12,
-          callbacks: {
-            label: ctx => '  Preço médio: ' + fmt(ctx.parsed)
-          }
-        }
-      }
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7A90B5',maxRotation:0,font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7A90B5',font:{family:"'Fira Code',monospace",size:10},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}
     }
-  });
+  }});
 }
 
-/* ════════════════════════════════════════════════════
-   BAR CHART — current prices
-   ════════════════════════════════════════════════════ */
-function buildBar() {
-  const ctx = document.getElementById('barChart').getContext('2d');
-  const data = [...filtered()].sort((a,b) => last(b) - last(a));
-
-  const labels   = data.map(p => p.item.length > 18 ? p.item.slice(0,18)+'…' : p.item);
-  const values   = data.map(p => last(p));
-  const bcolors  = data.map(p => GROUP_COLORS[p.grupo]?.solid || '#666');
-  const bgcolors = data.map(p => GROUP_COLORS[p.grupo]?.bg    || 'rgba(100,100,100,0.1)');
-
-  if (charts.bar) charts.bar.destroy();
-  charts.bar = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets:[{
-        label: 'Preço Atual (R$/unid.)',
-        data: values,
-        backgroundColor: bgcolors,
-        borderColor: bcolors,
-        borderWidth: 1.5,
-        borderRadius: 5,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      animation: { duration:600 },
-      plugins: {
-        legend: { display:false },
-        tooltip: {
-          backgroundColor:'#1a2035', borderColor:'rgba(255,255,255,0.1)',
-          borderWidth:1, padding:10,
-          callbacks: { label: ctx => ' ' + fmt(ctx.parsed.x) }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color:'rgba(255,255,255,0.04)' },
-          ticks: { color:'#7a8899', callback: v => 'R$' + (v/1000).toFixed(0) + 'k' }
-        },
-        y: {
-          grid: { display:false },
-          ticks: { color:'#c9d3df', font:{ size:10 } }
-        }
-      }
+/* DONUT */
+function buildDonut(){
+  const ctx=document.getElementById('donutChart').getContext('2d');
+  const f=filtered();
+  const groups=[...new Set(f.map(p=>p.grupo))];
+  const avgs=groups.map(g=>{const items=f.filter(p=>p.grupo===g);return items.reduce((s,p)=>s+last(p),0)/items.length;});
+  if(charts.donut)charts.donut.destroy();
+  charts.donut=new Chart(ctx,{type:'doughnut',data:{
+    labels:groups.map(g=>g.replace('/Polisorbatos','').replace('/Outros','')),
+    datasets:[{data:avgs,backgroundColor:groups.map(g=>GC[g]?.bg||'rgba(100,100,100,0.1)'),borderColor:groups.map(g=>GC[g]?.s||'#666'),borderWidth:2,hoverOffset:10}]
+  },options:{
+    responsive:true, cutout:'65%', animation:{duration:600,easing:'easeInOutQuart'},
+    plugins:{
+      legend:{position:'bottom',labels:{color:'#7A90B5',font:{size:10}}},
+      tooltip:{...TT,callbacks:{label:ctx=>'  Preço médio: '+fmtBR(ctx.parsed)}}
     }
-  });
+  }});
 }
 
-/* ════════════════════════════════════════════════════
-   BAR CHART — variation %
-   ════════════════════════════════════════════════════ */
-function buildVarChart() {
-  const ctx = document.getElementById('varChart').getContext('2d');
-  const data = [...filtered()].sort((a,b) => vari(a) - vari(b));
-
-  const labels   = data.map(p => p.item.length > 18 ? p.item.slice(0,18)+'…' : p.item);
-  const values   = data.map(p => +vari(p).toFixed(2));
-  const bcolors  = values.map(v => v < -0.5 ? '#ff5252' : v === 0 ? '#ffd740' : '#00e676');
-  const bgcolors = values.map(v => v < -0.5 ? 'rgba(255,82,82,0.12)' : v === 0 ? 'rgba(255,215,64,0.12)' : 'rgba(0,230,118,0.12)');
-
-  if (charts.var) charts.var.destroy();
-  charts.var = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets:[{
-        label: 'Variação % (abertura → fechamento)',
-        data: values,
-        backgroundColor: bgcolors,
-        borderColor: bcolors,
-        borderWidth: 1.5,
-        borderRadius: 5,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      animation: { duration:600 },
-      plugins: {
-        legend: { display:false },
-        tooltip: {
-          backgroundColor:'#1a2035', borderColor:'rgba(255,255,255,0.1)',
-          borderWidth:1, padding:10,
-          callbacks: { label: ctx => ' ' + ctx.parsed.x.toFixed(2) + '%' }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color:'rgba(255,255,255,0.04)' },
-          ticks: { color:'#7a8899', callback: v => v + '%' }
-        },
-        y: {
-          grid: { display:false },
-          ticks: { color:'#c9d3df', font:{ size:10 } }
-        }
-      }
+/* BAR — prices */
+function buildBar(){
+  const ctx=document.getElementById('barChart').getContext('2d');
+  const data=[...filtered()].sort((a,b)=>last(b)-last(a));
+  if(charts.bar)charts.bar.destroy();
+  charts.bar=new Chart(ctx,{type:'bar',data:{
+    labels:data.map(p=>p.item.length>19?p.item.slice(0,19)+'…':p.item),
+    datasets:[{label:'Preço Atual',data:data.map(p=>last(p)),backgroundColor:data.map(p=>GC[p.grupo]?.bg||'rgba(100,100,100,.1)'),borderColor:data.map(p=>GC[p.grupo]?.s||'#666'),borderWidth:1.5,borderRadius:5,borderSkipped:false}]
+  },options:{
+    indexAxis:'y', responsive:true, animation:{duration:500},
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:ctx=>'  '+fmtBR(ctx.parsed.x)}}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7A90B5',font:{family:"'Fira Code',monospace",size:10},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}},
+      y:{grid:{display:false},ticks:{color:'#EAF0FB',font:{size:10}}}
     }
-  });
+  }});
 }
 
-/* ════════════════════════════════════════════════════
-   TABLE
-   ════════════════════════════════════════════════════ */
-function sortTable(key) {
-  if (sortKey === key) sortAsc = !sortAsc;
-  else { sortKey = key; sortAsc = key === 'item' || key === 'grupo'; }
-  document.querySelectorAll('.data-table th').forEach(th => th.classList.remove('sorted'));
-  const el = document.getElementById('th-' + key);
-  if (el) { el.classList.add('sorted'); el.querySelector('.sort-arrow').textContent = sortAsc ? '↑' : '↓'; }
+/* BAR — variation */
+function buildVar(){
+  const ctx=document.getElementById('varChart').getContext('2d');
+  const data=[...filtered()].sort((a,b)=>varP(a)-varP(b));
+  const vals=data.map(p=>+varP(p).toFixed(2));
+  if(charts.vari)charts.vari.destroy();
+  charts.vari=new Chart(ctx,{type:'bar',data:{
+    labels:data.map(p=>p.item.length>19?p.item.slice(0,19)+'…':p.item),
+    datasets:[{label:'Variação %',data:vals,
+      backgroundColor:vals.map(v=>v<-.05?'rgba(255,82,82,0.13)':v===0?'rgba(255,215,64,0.13)':'rgba(0,230,118,0.13)'),
+      borderColor:vals.map(v=>v<-.05?'#FF5252':v===0?'#FFD740':'#00E676'),
+      borderWidth:1.5, borderRadius:5, borderSkipped:false}]
+  },options:{
+    indexAxis:'y', responsive:true, animation:{duration:500},
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:ctx=>'  '+fmtPct(ctx.parsed.x)}}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7A90B5',font:{family:"'Fira Code',monospace",size:10},callback:v=>v+'%'}},
+      y:{grid:{display:false},ticks:{color:'#EAF0FB',font:{size:10}}}
+    }
+  }});
+}
+
+/* TABLE */
+function doSort(key){
+  if(sortKey===key)sortAsc=!sortAsc;
+  else{sortKey=key;sortAsc=(key==='item'||key==='grupo');}
+  document.querySelectorAll('.dtable th').forEach(th=>{th.setAttribute('aria-sort','none');const si=th.querySelector('.sort-icon');if(si)si.textContent='↕';});
+  const th=document.getElementById('th-'+key);
+  if(th){th.setAttribute('aria-sort',sortAsc?'ascending':'descending');const si=th.querySelector('.sort-icon');if(si)si.textContent=sortAsc?'↑':'↓';}
   renderTable();
 }
 
-function renderTable() {
-  const q    = document.getElementById('searchInput').value.toLowerCase();
-  let data   = filtered().filter(p => p.item.toLowerCase().includes(q) || p.grupo.toLowerCase().includes(q));
-
-  data = data.sort((a,b) => {
-    let va, vb;
-    switch (sortKey) {
-      case 'item':     va = a.item;    vb = b.item;    break;
-      case 'grupo':    va = a.grupo;   vb = b.grupo;   break;
-      case 'preco':    va = last(a);   vb = last(b);   break;
-      case 'abertura': va = first(a);  vb = first(b);  break;
-      case 'var':      va = vari(a);   vb = vari(b);   break;
-      case 'min':      va = minP(a);   vb = minP(b);   break;
-      case 'max':      va = maxP(a);   vb = maxP(b);   break;
-      case 'amp':      va = maxP(a)-minP(a); vb = maxP(b)-minP(b); break;
-      default:         va = last(a);   vb = last(b);
+function renderTable(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  let data=filtered().filter(p=>p.item.toLowerCase().includes(q)||p.grupo.toLowerCase().includes(q));
+  data=data.sort((a,b)=>{
+    let va,vb;
+    switch(sortKey){
+      case'item':va=a.item;vb=b.item;break; case'grupo':va=a.grupo;vb=b.grupo;break;
+      case'preco':va=last(a);vb=last(b);break; case'abertura':va=first(a);vb=first(b);break;
+      case'var':va=varP(a);vb=varP(b);break; case'min':va=minP(a);vb=minP(b);break;
+      case'max':va=maxP(a);vb=maxP(b);break; case'amp':va=maxP(a)-minP(a);vb=maxP(b)-minP(b);break;
+      default:va=last(a);vb=last(b);
     }
-    if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-    return sortAsc ? va - vb : vb - va;
+    if(typeof va==='string')return sortAsc?va.localeCompare(vb,'pt'):vb.localeCompare(va,'pt');
+    return sortAsc?va-vb:vb-va;
   });
-
-  const tb = document.getElementById('tableBody');
-  tb.innerHTML = data.map(p => {
-    const v     = vari(p);
-    const gc    = GROUP_COLORS[p.grupo];
-    const pct   = (last(p) / maxLast * 100).toFixed(1);
-    const vClass= v < -0.1 ? 'neg' : v === 0 ? 'flat' : 'pos';
-    const vSign = v < 0 ? '' : v === 0 ? '' : '+';
-    return `
-      <tr>
-        <td style="font-weight:600; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.item}">${p.item}</td>
-        <td>
-          <span class="grupo-badge" style="background:${gc.bg}; border:1px solid ${gc.border}20; color:${gc.solid}">
-            <span class="dot" style="background:${gc.solid}"></span>
-            ${p.grupo.replace('/Polisorbatos','').replace('/Outros','')}
-          </span>
-        </td>
-        <td class="price-cell">${fmt(last(p))}</td>
-        <td class="price-cell" style="color:var(--text2)">${fmt(first(p))}</td>
-        <td class="var-cell ${vClass}">${vSign}${v.toFixed(2)}%</td>
-        <td style="color:var(--text2)">${fmt(minP(p))}</td>
-        <td style="color:var(--text2)">${fmt(maxP(p))}</td>
-        <td style="color:var(--text2)">${fmt(maxP(p)-minP(p))}</td>
-        <td style="color:var(--text3)">${p.unidade}</td>
-        <td style="color:var(--text3); font-size:10px; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.fonte}">${p.fonte}</td>
-        <td>
-          <div class="sparkbar">
-            <div class="sparkbar-fill" style="width:${pct}%"></div>
-          </div>
-        </td>
-      </tr>`;
+  const pct=p=>((last(p)/maxLast)*100).toFixed(1);
+  const vc=p=>varP(p)<-.05?'neg':varP(p)===0?'flat':'pos';
+  const vs=p=>varP(p)>=0?'+':'';
+  document.getElementById('tBody').innerHTML=data.map(p=>{
+    const g=GC[p.grupo]||{s:'#888',bg:'rgba(136,136,136,0.1)'};
+    return `<tr>
+      <td class="td-name" title="${p.item}">${p.item}</td>
+      <td><span class="gbadge" style="background:${g.bg};border:1px solid ${g.s}28;color:${g.s}">
+        <span class="gbadge-dot" style="background:${g.s}" aria-hidden="true"></span>
+        ${p.grupo.replace('/Polisorbatos','').replace('/Outros','')}
+      </span></td>
+      <td class="td-price num">${fmtBR(last(p))}</td>
+      <td class="td-open num">${fmtBR(first(p))}</td>
+      <td class="td-var ${vc(p)} num">${vs(p)}${varP(p).toFixed(2)}%</td>
+      <td class="td-muted">${fmtBR(minP(p))}</td>
+      <td class="td-muted">${fmtBR(maxP(p))}</td>
+      <td class="td-muted">${fmtBR(maxP(p)-minP(p))}</td>
+      <td style="color:var(--t3);font-size:11px">${p.unidade}</td>
+      <td class="td-source" title="${p.fonte}">${p.fonte}</td>
+      <td><div class="pbar" role="progressbar" aria-valuenow="${pct(p)}" aria-valuemin="0" aria-valuemax="100">
+        <div class="pbar-fill" style="width:${pct(p)}%"></div>
+      </div></td>
+    </tr>`;
   }).join('');
 }
 
-/* ════════════════════════════════════════════════════
-   UPDATE ALL
-   ════════════════════════════════════════════════════ */
-function updateAllCharts() {
-  buildLine();
-  buildDonut();
-  buildBar();
-  buildVarChart();
+/* REBUILD ALL */
+function rebuildAll(){buildLine();buildDonut();buildBar();buildVar();}
+
+/* COUNT-UP KPI */
+function countUp(el,target,prefix,duration){
+  let start=null;
+  const step=ts=>{
+    if(!start)start=ts;
+    const pct=Math.min((ts-start)/duration,1);
+    const ease=1-Math.pow(1-pct,3);
+    el.textContent=prefix+Math.round(ease*target).toLocaleString('pt-BR');
+    if(pct<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
-/* ════════════════════════════════════════════════════
-   INIT
-   ════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  // Highlight default sort
-  const el = document.getElementById('th-preco');
-  if (el) el.querySelector('.sort-arrow').textContent = '↓';
-
-  // Animate KPI average
-  const avgEl = document.getElementById('kpi-avg');
-  const target = 9194;
-  let cur = 0;
-  const step = target / 40;
-  const iv = setInterval(() => {
-    cur = Math.min(cur + step, target);
-    avgEl.textContent = 'R$ ' + Math.round(cur).toLocaleString('pt-BR');
-    if (cur >= target) clearInterval(iv);
-  }, 18);
-
-  // Default nav active
-  document.getElementById('nav-Todos').classList.add('active');
-
-  updateAllCharts();
+/* INIT */
+document.addEventListener('DOMContentLoaded',()=>{
+  const defBtn=document.getElementById('nb-Todos');
+  if(defBtn){defBtn.classList.add('active');defBtn.setAttribute('aria-current','page');}
+  const avgTarget=Math.round(PRODUCTS.reduce((s,p)=>s+last(p),0)/PRODUCTS.length);
+  countUp(document.getElementById('kpi-avg'),avgTarget,'R$ ',1200);
+  const th=document.getElementById('th-preco');
+  if(th){th.setAttribute('aria-sort','descending');th.querySelector('.sort-icon').textContent='↓';}
+  rebuildAll();
   renderTable();
 });
 </script>
