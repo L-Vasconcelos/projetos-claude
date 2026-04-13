@@ -241,7 +241,7 @@ body {
 
 /* ─── HEATMAP ────────────────────────────────────────────────── */
 .heatmap-months {
-  display: grid; grid-template-columns: 170px repeat(var(--hm-cols,3), 1fr);
+  display: grid; grid-template-columns: 170px repeat(3, 1fr);
   gap: 4px; margin-bottom: 8px;
 }
 
@@ -249,7 +249,7 @@ body {
 
 .heatmap-rows { display: flex; flex-direction: column; gap: 4px; }
 
-.heatmap-row { display: grid; grid-template-columns: 170px repeat(var(--hm-cols,3), 1fr); gap: 4px; align-items: center; }
+.heatmap-row { display: grid; grid-template-columns: 170px repeat(3, 1fr); gap: 4px; align-items: center; }
 
 .heatmap-row-label { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; font-weight: 500; }
 
@@ -508,7 +508,7 @@ td.td-num { font-family: 'Fira Code', monospace; font-size: 12px; }
       </div>
     </div>
     <div class="topbar-row2">
-      <div class="filter-group" data-filter="periodo">
+      <div class="filter-group">
         <span class="filter-label">Período</span>
         <button class="btn-filter active" data-period="all" onclick="setPeriod('all',this)">Todos</button>
         <button class="btn-filter" data-period="jan" onclick="setPeriod('jan',this)">Jan/26</button>
@@ -527,6 +527,13 @@ td.td-num { font-family: 'Fira Code', monospace; font-size: 12px; }
         <span class="filter-label">Vendedor</span>
         <select class="select-filter" onchange="setVendedor(this.value)">
           <option value="all">Todos os vendedores</option>
+          <option>ARIANE MANTOVANI</option>
+          <option>PREMIUM ASSESSORIA</option>
+          <option>LUCAS VENDRAMIN</option>
+          <option>KONRAD ASSESSORIA</option>
+          <option>BRUNO SARTORI</option>
+          <option>CLAUDIA JAUREGUI</option>
+          <option>LUIZ IZELLI</option>
         </select>
       </div>
       <div class="filter-sep"></div>
@@ -534,6 +541,13 @@ td.td-num { font-family: 'Fira Code', monospace; font-size: 12px; }
         <span class="filter-label">Grupo</span>
         <select class="select-filter" id="sel-grupo" onchange="setGrupo(this.value)">
           <option value="all">Todos os sub grupos</option>
+          <option>GLICERINA</option>
+          <option>ACIDO GRAXO</option>
+          <option>OLEO VEGETAL</option>
+          <option>OLEOQUIMICO</option>
+          <option>LECITINA</option>
+          <option>ESTER</option>
+          <option>PETROQUIMICO</option>
         </select>
       </div>
     </div>
@@ -798,79 +812,12 @@ const DATA = {
 // ─── STATE ────────────────────────────────────────────────────
 let state = { period: 'all', mercado: 'all', vendedor: 'all', grupo: 'all' };
 
-// ─── RAW RECORDS (para re-agregação por filtro de mercado) ────
-let allRecords = [];
-
 // ─── HELPERS ──────────────────────────────────────────────────
-const MONTH_KEYS = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'};
-const MONTH_PT   = {jan:'Jan',fev:'Fev',mar:'Mar',abr:'Abr',mai:'Mai',jun:'Jun',jul:'Jul',ago:'Ago',set:'Set',out:'Out',nov:'Nov',dez:'Dez'};
-let MONTHS       = ['jan','fev','mar'];
-let MONTH_LABELS = ['Jan/26','Fev/26','Mar/26'];
+const MONTHS = ['jan','fev','mar'];
+const MONTH_LABELS = ['Jan/26','Fev/26','Mar/26'];
 
 function activeMonths() {
-  return state.period === 'all' ? MONTHS : (MONTHS.includes(state.period) ? [state.period] : MONTHS);
-}
-
-function getFilteredRecords() {
-  if (!allRecords.length) return [];
-  if (state.mercado === 'all') return allRecords;
-  const ext = state.mercado === 'ext';
-  return allRecords.filter(r => ext ? r.mercado.includes('EXT') : !r.mercado.includes('EXT'));
-}
-
-function recompute() {
-  if (!allRecords.length) return;
-  const agg = computeAggregations(getFilteredRecords());
-  DATA.monthly    = agg.monthly;
-  DATA.monthlyNfs = agg.monthlyNfs;
-  DATA.monthlyCli = agg.monthlyCli;
-  DATA.mercadoMes = agg.mercadoMes;
-  DATA.gruposMes  = agg.gruposMes;
-  DATA.vendedores = agg.vendedores;
-  DATA.heatmap    = agg.heatmap;
-  DATA.paises     = agg.paises;
-
-  // Atualiza meses disponíveis para o subconjunto filtrado
-  if (agg.availMonths && agg.availMonths.length > 0) {
-    MONTHS = agg.availMonths;
-    const yr = String(new Date().getFullYear()).slice(2);
-    MONTH_LABELS = MONTHS.map(mk => MONTH_PT[mk] + '/' + yr);
-    if (state.period !== 'all' && !MONTHS.includes(state.period)) state.period = 'all';
-    updatePeriodButtons();
-  }
-
-  // Atualiza selects com valores reais do subconjunto
-  const selVen = document.querySelector('select.select-filter[onchange="setVendedor(this.value)"]');
-  if (selVen && agg.vendedores.length > 0) {
-    const prev = selVen.value;
-    selVen.innerHTML = '<option value="all">Todos os vendedores</option>' +
-      agg.vendedores.map(v => `<option>${v.name}</option>`).join('');
-    selVen.value = agg.vendedores.some(v => v.name === prev) ? prev : 'all';
-    if (selVen.value !== state.vendedor) state.vendedor = selVen.value;
-  }
-
-  const selGrupo = document.getElementById('sel-grupo');
-  if (selGrupo && agg.gruposMes.length > 0) {
-    const prev = selGrupo.value;
-    selGrupo.innerHTML = '<option value="all">Todos os sub grupos</option>' +
-      agg.gruposMes.map(g => `<option>${g.name}</option>`).join('');
-    selGrupo.value = agg.gruposMes.some(g => g.name === prev) ? prev : 'all';
-    if (selGrupo.value !== state.grupo) state.grupo = selGrupo.value;
-  }
-}
-
-function updatePeriodButtons() {
-  const grp = document.querySelector('.filter-group[data-filter="periodo"]');
-  if (!grp) return;
-  grp.querySelectorAll('[data-period]:not([data-period="all"])').forEach(b => b.remove());
-  MONTHS.forEach((mk, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'btn-filter' + (state.period === mk ? ' active' : '');
-    btn.dataset.period = mk;
-    btn.textContent = MONTH_LABELS[i];
-    btn.onclick = function() { setPeriod(mk, this); };
-    grp.appendChild(btn);
-  });
+  return state.period === 'all' ? MONTHS : [state.period];
 }
 
 function sumMonths(obj) {
@@ -935,9 +882,6 @@ function updateKPIs() {
 
 // ─── HEATMAP ─────────────────────────────────────────────────
 function buildHeatmap() {
-  // Atualiza variável CSS para número dinâmico de colunas
-  document.documentElement.style.setProperty('--hm-cols', MONTHS.length);
-
   const header = document.getElementById('heatmap-header');
   header.innerHTML = '<div></div>' + MONTH_LABELS.map((l,i) => {
     const active = state.period === 'all' || state.period === MONTHS[i];
@@ -1023,7 +967,6 @@ function buildGrupos() {
 
 // ─── PAÍSES ───────────────────────────────────────────────────
 function buildPaises() {
-  if (!DATA.paises || DATA.paises.length === 0) return;
   const max = DATA.paises[0].value;
   document.getElementById('pais-list').innerHTML = DATA.paises.map((p,i) => {
     const w = (p.value/max*100).toFixed(1);
@@ -1085,9 +1028,7 @@ function buildTable() {
   }).join('');
 
   // update table subtitle
-  const periodLabel = state.period === 'all'
-    ? (MONTH_LABELS.length > 0 ? MONTH_LABELS[0].split('/')[1] ? MONTH_LABELS[0] + '–' + MONTH_LABELS[MONTH_LABELS.length-1] : 'Todos' : 'Todos')
-    : (MONTH_LABELS[MONTHS.indexOf(state.period)] || state.period.toUpperCase());
+  const periodLabel = state.period === 'all' ? 'Jan–Mar 2026' : MONTH_LABELS[MONTHS.indexOf(state.period)];
   const filters = [];
   if (state.vendedor !== 'all') filters.push(state.vendedor);
   if (state.grupo !== 'all') filters.push(state.grupo);
@@ -1143,8 +1084,8 @@ function updateMeta() {
   const ytd = activeMonths().reduce((s,m) => s + DATA.monthly[m], 0);
   const pct = (ytd / DATA.meta * 100).toFixed(1);
   document.getElementById('meta-fill').style.width = Math.min(+pct, 100) + '%';
-  const lab = state.period === 'all' ? 'Faturamento YTD ' + new Date().getFullYear()
-    : 'Faturamento ' + (MONTH_LABELS[MONTHS.indexOf(state.period)] || state.period.toUpperCase());
+  const lab = state.period === 'all' ? 'Faturamento YTD 2026'
+    : 'Faturamento ' + MONTH_LABELS[MONTHS.indexOf(state.period)];
   document.getElementById('meta-label').textContent = lab;
   document.getElementById('meta-val').innerHTML = `R$ <b>${fmtShort(ytd)}</b> / R$ 120M meta`;
   document.getElementById('meta-pct').textContent = `(${pct.replace('.',',')}%)`;
@@ -1152,7 +1093,6 @@ function updateMeta() {
 
 // ─── GLOBAL REFRESH ───────────────────────────────────────────
 function refreshAll() {
-  recompute();
   updateKPIs();
   updateMeta();
   buildHeatmap();
@@ -1165,16 +1105,13 @@ function refreshAll() {
 // MICROSOFT AUTH + GRAPH API INTEGRATION
 // ═══════════════════════════════════════════════════════════════
 
-const REDIRECT_URI = 'http://localhost:8080/dashboard_comercial.html';
-
 const MSAL_CONFIG = {
   auth: {
     clientId: '2b7e46de-80b1-47a2-bbc6-2bbaf0c981f4',
     authority: 'https://login.microsoftonline.com/a5738489-a7f0-4324-b968-06c3044f0e9e',
-    redirectUri: REDIRECT_URI,
-    postLogoutRedirectUri: REDIRECT_URI
+    redirectUri: window.location.href.split('?')[0].split('#')[0]
   },
-  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
 };
 
 const GRAPH_SCOPES  = ['https://graph.microsoft.com/Files.Read.All', 'https://graph.microsoft.com/Sites.Read.All'];
@@ -1183,6 +1120,7 @@ const SHAREPOINT_FILE = 'https://graph.microsoft.com/v1.0/sites/meridionaltcs.sh
 // Column indices (0-based Excel columns)
 const COL = { dataEmissao:1, nf:2, cliente:3, pais:4, vendedor:5, subVendedor:8, mercado:11, valor:12, produto:30, peso:31, subGrupo:33 };
 
+const MONTH_KEYS = {1:'jan', 2:'fev', 3:'mar'};
 const COUNTRY_FLAGS = {
   'CHINA':{'🇨🇳':1}, 'NETHERLANDS':{'🇳🇱':1}, 'RUSSIA':{'🇷🇺':1}, 'RUSSIA (RÚSSIA)':{'🇷🇺':1},
   'INDONESIA':{'🇮🇩':1}, 'INDONESIA (INDONÉSIA)':{'🇮🇩':1}, 'MALASIA':{'🇲🇾':1}, 'MALAYSIA':{'🇲🇾':1},
@@ -1249,7 +1187,7 @@ async function getToken() {
   }
 
   // 2. Popup interativo
-  const res = await msalInstance.acquireTokenPopup({ ...req, redirectUri: REDIRECT_URI });
+  const res = await msalInstance.acquireTokenPopup(req);
   authAccount = res.account; setAuthUI('on');
   return res.accessToken;
 }
@@ -1292,8 +1230,7 @@ function parseExcel(buf) {
   const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
   const ws   = wb.Sheets['Planilha1'];
   if (!ws) throw new Error('Aba "Planilha1" não encontrada no arquivo.');
-  // raw: true preserva objetos Date (requerido pelo cellDates:true)
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
   return rows;
 }
 
@@ -1310,22 +1247,16 @@ function processRows(rows) {
     if (!r) return acc;
     const rawVal  = r[COL.valor];
     const rawDate = r[COL.dataEmissao];
-    const valor   = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(',','.')) || 0;
+    const valor   = parseFloat(String(rawVal).replace(',','.')) || 0;
     if (!valor || !rawDate) return acc;
 
     let dt;
-    if (rawDate instanceof Date) {
-      dt = rawDate;
-    } else if (typeof rawDate === 'number') {
-      // número serial do Excel → Date (base 1900, corrige offset de 25569 dias até epoch)
-      dt = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-    } else {
-      dt = new Date(rawDate);
-    }
+    if (rawDate instanceof Date) { dt = rawDate; }
+    else { dt = new Date(rawDate); }
     if (isNaN(dt)) return acc;
 
     const mes = dt.getMonth() + 1; // 1-12
-    if (!MONTH_KEYS[mes]) return acc; // mês fora do mapa (não deveria ocorrer)
+    if (![1,2,3].includes(mes)) return acc; // só Jan-Mar por enquanto
 
     acc.push({
       mes,
@@ -1345,19 +1276,19 @@ function processRows(rows) {
 
 // ─── COMPUTE AGGREGATIONS ─────────────────────────────────────
 function computeAggregations(records) {
-  const allMK = Object.values(MONTH_KEYS); // ['jan','fev',...,'dez']
-  const zeroAll = () => { const o={}; allMK.forEach(mk=>o[mk]=0); return o; };
-  const setAll  = () => { const o={}; allMK.forEach(mk=>o[mk]=new Set()); return o; };
+  const MK = MONTH_KEYS; // {1:'jan',2:'fev',3:'mar'}
+  const zero3 = () => ({jan:0,fev:0,mar:0});
+  const set3  = () => ({jan:new Set(),fev:new Set(),mar:new Set()});
 
   // Monthly totals
-  const monthly    = zeroAll();
-  const monthlyNfs = zeroAll();
-  const monthlyCli = zeroAll();
-  const nfSets  = setAll();
-  const cliSets = setAll();
+  const monthly    = zero3();
+  const monthlyNfs = zero3();
+  const monthlyCli = zero3();
+  const nfSets  = {jan:new Set(),fev:new Set(),mar:new Set()};
+  const cliSets = {jan:new Set(),fev:new Set(),mar:new Set()};
 
   // Mercado per month
-  const mercadoMes = { exterior: zeroAll(), interno: zeroAll() };
+  const mercadoMes = { exterior: zero3(), interno: zero3() };
 
   // Sub Grupo per month
   const sgMap = {};
@@ -1371,13 +1302,9 @@ function computeAggregations(records) {
   // Países (exterior only)
   const paisMap = {};
 
-  // Track which months actually have data
-  const presentMonths = new Set();
-
   records.forEach(r => {
-    const mk = MONTH_KEYS[r.mes];
+    const mk = MK[r.mes];
     if (!mk) return;
-    presentMonths.add(r.mes);
 
     monthly[mk]  += r.valor;
     if (r.nf)      nfSets[mk].add(r.nf);
@@ -1389,12 +1316,12 @@ function computeAggregations(records) {
 
     // Sub Grupo
     const sg = r.subGrupo || 'OUTROS';
-    if (!sgMap[sg]) sgMap[sg] = zeroAll();
+    if (!sgMap[sg]) sgMap[sg] = zero3();
     sgMap[sg][mk] += r.valor;
 
     // Vendedor
     const ven = r.vendedor || 'OUTROS';
-    if (!venMap[ven]) venMap[ven] = { fat: zeroAll(), nfs: setAll(), cli: setAll(), grupos: new Set() };
+    if (!venMap[ven]) venMap[ven] = { fat: zero3(), nfs: set3(), cli: set3(), grupos: new Set() };
     venMap[ven].fat[mk] += r.valor;
     if (r.nf)      venMap[ven].nfs[mk].add(r.nf);
     if (r.cliente) venMap[ven].cli[mk].add(r.cliente);
@@ -1402,7 +1329,7 @@ function computeAggregations(records) {
 
     // Sub Vendedor
     const sv = r.subVendedor || 'OUTROS';
-    if (!svMap[sv]) svMap[sv] = zeroAll();
+    if (!svMap[sv]) svMap[sv] = zero3();
     svMap[sv][mk] += r.valor;
 
     // Países exterior
@@ -1413,50 +1340,36 @@ function computeAggregations(records) {
   });
 
   // Finalise monthly counts
-  allMK.forEach(mk => {
+  ['jan','fev','mar'].forEach(mk => {
     monthlyNfs[mk] = nfSets[mk].size;
     monthlyCli[mk] = cliSets[mk].size;
   });
 
-  // Available months sorted chronologically
-  const availMonths = [...presentMonths]
-    .sort((a,b) => a - b)
-    .map(n => MONTH_KEYS[n]);
-
   // Sub Grupos sorted desc by total
   const subGrupoColors = ['#c41230','#3b82f6','#0d9488','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
   const gruposMes = Object.entries(sgMap)
-    .map(([name,v]) => {
-      const total = availMonths.reduce((s,mk) => s + v[mk], 0);
-      const obj = { name, color:'', total };
-      availMonths.forEach(mk => obj[mk] = v[mk]);
-      return obj;
-    })
+    .map(([name,v]) => ({ name, color:'', jan:v.jan, fev:v.fev, mar:v.mar, total:v.jan+v.fev+v.mar }))
     .sort((a,b) => b.total - a.total)
     .map((g,i) => ({ ...g, color: subGrupoColors[i % subGrupoColors.length] }));
 
   // Vendedores sorted desc by total fat
   const vendedores = Object.entries(venMap)
-    .map(([name, d]) => {
-      const fat = d.fat;
-      const nfs = {}; const cli = {};
-      availMonths.forEach(mk => { nfs[mk] = d.nfs[mk].size; cli[mk] = d.cli[mk].size; });
-      return { name, fat, nfs, cli, grupos: [...d.grupos] };
-    })
-    .sort((a,b) => availMonths.reduce((s,mk)=>s+b.fat[mk]-a.fat[mk],0))
+    .map(([name, d]) => ({
+      name,
+      fat: d.fat,
+      nfs: { jan: d.nfs.jan.size, fev: d.nfs.fev.size, mar: d.nfs.mar.size },
+      cli: { jan: d.cli.jan.size, fev: d.cli.fev.size, mar: d.cli.mar.size },
+      grupos: [...d.grupos]
+    }))
+    .sort((a,b) => (b.fat.jan+b.fat.fev+b.fat.mar)-(a.fat.jan+a.fat.fev+a.fat.mar))
     .slice(0, 10);
 
   // Heatmap top 8 sub vendedores by total
   const heatmap = Object.entries(svMap)
-    .map(([name,v]) => {
-      const total = availMonths.reduce((s,mk) => s + v[mk], 0);
-      const obj = { name: name.slice(0,25), total };
-      availMonths.forEach(mk => obj[mk] = v[mk]);
-      return obj;
-    })
+    .map(([name,v]) => ({ name: name.slice(0,25), jan:v.jan, fev:v.fev, mar:v.mar, total:v.jan+v.fev+v.mar }))
     .sort((a,b) => b.total - a.total)
     .slice(0, 8)
-    .map(({total, ...rest}) => rest);
+    .map(({name,jan,fev,mar}) => ({name,jan,fev,mar}));
 
   // Top 5 países exterior
   const flagFor = key => {
@@ -1471,7 +1384,7 @@ function computeAggregations(records) {
       return { name: name.length > 16 ? name.slice(0,14)+'…' : name, value, flag: flagFor(name) };
     });
 
-  return { monthly, monthlyNfs, monthlyCli, mercadoMes, gruposMes, vendedores, heatmap, paises, availMonths };
+  return { monthly, monthlyNfs, monthlyCli, mercadoMes, gruposMes, vendedores, heatmap, paises };
 }
 
 // ─── APPLY NEW DATA TO DASHBOARD ─────────────────────────────
@@ -1485,27 +1398,22 @@ function applyNewData(agg, totalRecords) {
   DATA.heatmap    = agg.heatmap;
   DATA.paises     = agg.paises;
 
-  // Atualiza meses disponíveis dinamicamente
-  if (agg.availMonths && agg.availMonths.length > 0) {
-    MONTHS = agg.availMonths;
-    const yr = String(new Date().getFullYear()).slice(2);
-    MONTH_LABELS = MONTHS.map(mk => MONTH_PT[mk] + '/' + yr);
-    // Reseta período para 'all' se o período atual não existe mais
-    if (state.period !== 'all' && !MONTHS.includes(state.period)) state.period = 'all';
-    updatePeriodButtons();
-  }
-
   // Recompute total meta KPI
-  const totalFat = MONTHS.reduce((s,mk) => s + (agg.monthly[mk]||0), 0);
-  DATA.meta = Math.ceil(totalFat / 0.80 / 1e6) * 1e6;
+  const totalFat = agg.monthly.jan + agg.monthly.fev + agg.monthly.mar;
+  DATA.meta = Math.ceil(totalFat / 0.80 / 1e6) * 1e6; // auto-estima meta como fat/80%
 
-  // Atualiza select de Vendedor com valores reais
-  const selVen = document.querySelector('select.select-filter[onchange="setVendedor(this.value)"]');
-  if (selVen && agg.vendedores.length > 0) {
-    selVen.innerHTML = '<option value="all">Todos os vendedores</option>' +
-      agg.vendedores.map(v => `<option>${v.name}</option>`).join('');
-    selVen.value = state.vendedor === 'all' ? 'all' : state.vendedor;
-  }
+  refreshAll();
+  buildPaises();
+
+  // Redraw sparklines with real data
+  requestAnimationFrame(() => {
+    const m = agg.monthly, n = agg.monthlyNfs, c = agg.monthlyCli;
+    drawSparkline('spark-fat',    [m.jan,m.fev,m.mar], '#c41230');
+    drawSparkline('spark-nfs',    [n.jan,n.fev,n.mar], '#3b82f6');
+    drawSparkline('spark-cli',    [c.jan,c.fev,c.mar], '#0d9488');
+    const t = {jan: m.jan/(n.jan||1), fev: m.fev/(n.fev||1), mar: m.mar/(n.mar||1)};
+    drawSparkline('spark-ticket', [t.jan,t.fev,t.mar], '#f59e0b');
+  });
 
   // Atualiza select de Sub Grupos com valores reais
   const selGrupo = document.getElementById('sel-grupo');
@@ -1513,18 +1421,6 @@ function applyNewData(agg, totalRecords) {
     selGrupo.innerHTML = '<option value="all">Todos os sub grupos</option>' +
       agg.gruposMes.map(g => `<option>${g.name}</option>`).join('');
   }
-
-  refreshAll();
-  buildPaises();
-
-  // Redraw sparklines com dados reais
-  requestAnimationFrame(() => {
-    const m = agg.monthly, n = agg.monthlyNfs, c = agg.monthlyCli;
-    drawSparkline('spark-fat',    MONTHS.map(mk=>m[mk]||0), '#c41230');
-    drawSparkline('spark-nfs',    MONTHS.map(mk=>n[mk]||0), '#3b82f6');
-    drawSparkline('spark-cli',    MONTHS.map(mk=>c[mk]||0), '#0d9488');
-    drawSparkline('spark-ticket', MONTHS.map(mk=>(m[mk]||0)/((n[mk]||0)||1)), '#f59e0b');
-  });
 
   // Atualiza badge para LIVE
   const badge = document.getElementById('data-source-badge');
@@ -1551,17 +1447,17 @@ function setMercado(val, el) {
   state.mercado = val;
   document.querySelectorAll('[data-mercado]').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  refreshAll();
+  buildDonut();
 }
 
 function setVendedor(v) {
   state.vendedor = v;
-  refreshAll();
+  buildTable();
 }
 
 function setGrupo(v) {
   state.grupo = v;
-  refreshAll();
+  buildTable();
 }
 
 async function atualizar(btn) {
@@ -1574,7 +1470,6 @@ async function atualizar(btn) {
     const rows  = parseExcel(buf);
     showLoading('Calculando indicadores…', `${rows.length - 1} linhas encontradas`);
     const records = processRows(rows);
-    allRecords = records; // armazena para re-agregação por filtro
     const agg     = computeAggregations(records);
     applyNewData(agg, records.length);
   } catch(e) {
@@ -1599,10 +1494,10 @@ window.addEventListener('load', async () => {
     const m = DATA.monthly;
     const n = DATA.monthlyNfs;
     const c = DATA.monthlyCli;
-    drawSparkline('spark-fat',    MONTHS.map(mk=>m[mk]||0), '#c41230');
-    drawSparkline('spark-nfs',    MONTHS.map(mk=>n[mk]||0), '#3b82f6');
-    drawSparkline('spark-cli',    MONTHS.map(mk=>c[mk]||0), '#0d9488');
-    drawSparkline('spark-ticket', MONTHS.map(mk=>(m[mk]||0)/((n[mk]||0)||1)), '#f59e0b');
+    drawSparkline('spark-fat',    [m.jan, m.fev, m.mar], '#c41230');
+    drawSparkline('spark-nfs',    [n.jan, n.fev, n.mar], '#3b82f6');
+    drawSparkline('spark-cli',    [c.jan, c.fev, c.mar], '#0d9488');
+    drawSparkline('spark-ticket', [m.jan/n.jan, m.fev/n.fev, m.mar/n.mar], '#f59e0b');
   });
 });
 </script>

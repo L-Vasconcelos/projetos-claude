@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artemis II — Mapa da Missão Lunar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #060a1e;
+  --panel: rgba(8,14,40,0.88);
+  --border: rgba(80,140,255,0.18);
+  --cyan: #00e5ff;
+  --green: #00e676;
+  --blue: #40c4ff;
+  --purple: #b39ddb;
+  --gold: #ffd740;
+  --white: #ddeeff;
+  --muted: rgba(160,190,255,0.55);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  font-family: 'Exo', sans-serif;
+  color: var(--white);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+#starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.nebula { position: fixed; border-radius: 50%; filter: blur(130px); pointer-events: none; z-index: 0; opacity: 0.12; }
+.nb1 { width:900px;height:700px;background:radial-gradient(ellipse,#1a0560,transparent);top:-250px;left:-200px;animation:df1 28s ease-in-out infinite alternate; }
+.nb2 { width:700px;height:500px;background:radial-gradient(ellipse,#003d6b,transparent);bottom:-150px;right:-180px;animation:df2 32s ease-in-out infinite alternate; }
+@keyframes df1{to{transform:translate(70px,50px)scale(1.1);opacity:.17}}
+@keyframes df2{to{transform:translate(-50px,-70px)scale(1.13);opacity:.15}}
+.wrapper { position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 20px 80px; }
+
+/* HEADER */
+header { text-align:center;padding:48px 20px 30px; }
+.badge { display:inline-block;background:rgba(0,230,255,0.08);border:1px solid rgba(0,230,255,0.28);color:var(--cyan);font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:6px 18px;border-radius:20px;margin-bottom:18px; }
+header h1 { font-size:clamp(2.2rem,5vw,4rem);font-weight:800;letter-spacing:-1px;line-height:1.08;background:linear-gradient(135deg,#fff 0%,#80d8ff 40%,#00e5ff 70%,#7c4dff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px; }
+header p { font-size:1rem;color:var(--muted);max-width:580px;margin:0 auto;line-height:1.7;font-weight:300; }
+
+/* STATS */
+.stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin:32px 0 28px; }
+.sc { background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;backdrop-filter:blur(12px);transition:border-color .3s,transform .3s;cursor:default; }
+.sc:hover { border-color:rgba(0,230,255,.4);transform:translateY(-3px); }
+.sv { font-family:'Roboto Mono',monospace;font-size:1.35rem;font-weight:500;color:var(--cyan);text-shadow:0 0 14px rgba(0,229,255,.5);line-height:1;margin-bottom:5px; }
+.sl { font-size:.68rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase; }
+
+/* CANVAS */
+.section-lbl { font-family:'Roboto Mono',monospace;font-size:.75rem;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:10px; }
+.section-lbl::before { content:'';display:block;width:22px;height:1px;background:var(--cyan);box-shadow:0 0 8px var(--cyan); }
+.cw { background:var(--panel);border:1px solid var(--border);border-radius:18px;overflow:hidden;backdrop-filter:blur(10px);box-shadow:0 0 50px rgba(0,80,200,.08);position:relative; }
+canvas { display:block;width:100%; }
+.controls { display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center; }
+.btn { background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.22);color:var(--cyan);font-family:'Roboto Mono',monospace;font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;padding:7px 16px;border-radius:7px;cursor:pointer;transition:background .2s,border-color .2s,transform .15s; }
+.btn:hover { background:rgba(0,229,255,.17);border-color:rgba(0,229,255,.55);transform:translateY(-1px); }
+.btn.on { background:rgba(0,229,255,.22);border-color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.3); }
+#phLbl { font-family:'Roboto Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:1px;margin-left:4px; }
+
+/* LEGEND */
+.legend { display:flex;flex-wrap:wrap;gap:16px;margin:18px 0 8px;padding:14px 18px;background:var(--panel);border:1px solid var(--border);border-radius:12px;backdrop-filter:blur(10px); }
+.leg-item { display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted);font-family:'Roboto Mono',monospace; }
+.leg-line { width:32px;height:3px;border-radius:2px; }
+
+/* STEPS TABLE */
+.steps-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0; }
+@media(max-width:700px){ .steps-grid{grid-template-columns:1fr;} }
+.step-card { background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;backdrop-filter:blur(10px);display:flex;gap:12px;align-items:flex-start;transition:border-color .25s;cursor:default; }
+.step-card:hover { border-color:rgba(0,229,255,.35); }
+.step-num { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;font-family:'Roboto Mono',monospace;border:1.5px solid; }
+.step-title { font-size:.82rem;font-weight:600;margin-bottom:3px; }
+.step-desc { font-size:.7rem;color:var(--muted);line-height:1.5;font-family:'Roboto Mono',monospace; }
+
+/* BOTTOM GRID */
+.btm { display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px; }
+@media(max-width:700px){ .btm{grid-template-columns:1fr;} }
+.ic { background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;backdrop-filter:blur(12px); }
+.ic h3 { font-size:.72rem;font-family:'Roboto Mono',monospace;letter-spacing:2.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px; }
+.crew-item { display:flex;align-items:center;gap:11px;padding:9px 11px;background:rgba(255,255,255,.04);border-radius:9px;border:1px solid rgba(255,255,255,.07);margin-bottom:8px;transition:border-color .25s;cursor:default; }
+.crew-item:hover { border-color:rgba(0,229,255,.28); }
+.av { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0; }
+.cn { font-size:.85rem;font-weight:600;margin-bottom:2px; }
+.cr { font-size:.68rem;color:var(--muted);font-family:'Roboto Mono',monospace; }
+.cf { margin-left:auto;font-size:1.1rem; }
+.fact { display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07); }
+.fact:last-child { border-bottom:none; }
+.fk { font-size:.75rem;color:var(--muted);font-family:'Roboto Mono',monospace; }
+.fv { font-size:.84rem;font-weight:600;text-align:right; }
+
+footer { text-align:center;padding:36px 20px;border-top:1px solid var(--border);margin-top:50px;color:var(--muted);font-size:.74rem;font-family:'Roboto Mono',monospace;letter-spacing:1px; }
+footer span { color:var(--cyan); }
+
+@media(prefers-reduced-motion:reduce){ .nb1,.nb2{animation:none!important} }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="nebula nb1"></div>
+<div class="nebula nb2"></div>
+
+<div class="wrapper">
+<header>
+  <div class="badge">NASA · Artemis Program · 2026</div>
+  <h1>Artemis II<br>Primeira Missão Tripulada à Lua desde Apollo</h1>
+  <p>Trajetória de retorno livre ao redor da Lua — 15 etapas, 4 astronautas, ~10 dias de missão.</p>
+</header>
+
+<div class="stats">
+  <div class="sc"><div class="sv">4</div><div class="sl">Tripulantes</div></div>
+  <div class="sc"><div class="sv">~10</div><div class="sl">Dias</div></div>
+  <div class="sc"><div class="sv">4.000 nmi</div><div class="sl">Altitude lunar</div></div>
+  <div class="sc"><div class="sv">386.400 km</div><div class="sl">Distância à Lua</div></div>
+  <div class="sc"><div class="sv">~40.000</div><div class="sl">km/h reentrada</div></div>
+  <div class="sc"><div class="sv">2026</div><div class="sl">Lançamento</div></div>
+</div>
+
+<div class="section-lbl">Trajetória da Missão — 15 Etapas</div>
+<div class="controls">
+  <button class="btn on" id="btnPlay" onclick="togglePlay()">Pausar</button>
+  <button class="btn" onclick="setSpd(0.5)">0.5×</button>
+  <button class="btn on" id="s1x" onclick="setSpd(1)">1×</button>
+  <button class="btn" onclick="setSpd(2)">2×</button>
+  <button class="btn" onclick="resetAnim()">Reiniciar</button>
+  <span id="phLbl">— Etapa 1: Lançamento —</span>
+</div>
+<div class="cw"><canvas id="mc"></canvas></div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-line" style="background:#00e676;box-shadow:0 0 6px #00e676"></div>Trajetória Outbound (ida)</div>
+  <div class="leg-item"><div class="leg-line" style="background:#40c4ff;box-shadow:0 0 6px #40c4ff"></div>Trajetória Return (volta)</div>
+  <div class="leg-item"><div class="leg-line" style="background:#ffd740;box-shadow:0 0 6px #ffd740;border-top:2px dashed #ffd740;background:none"></div>Descarte ICPS</div>
+  <div class="leg-item"><div style="width:14px;height:14px;border-radius:50%;background:rgba(0,230,255,.25);border:1.5px solid #00e5ff;display:inline-block"></div>Etapa numerada</div>
+  <div class="leg-item"><div style="width:14px;height:14px;border-radius:50%;background:rgba(255,215,64,.2);border:1.5px solid #ffd740;display:inline-block"></div>Eventos principais</div>
+</div>
+
+<!-- STEPS -->
+<div class="steps-grid" id="stepsGrid"></div>
+
+<!-- BOTTOM -->
+<div class="btm">
+  <div class="ic">
+    <h3>Tripulação</h3>
+    <div class="crew-item"><div class="av" style="background:rgba(255,215,64,.15);color:#ffd740">RW</div><div><div class="cn">Reid Wiseman</div><div class="cr">Comandante · NASA</div></div><div class="cf">🇺🇸</div></div>
+    <div class="crew-item"><div class="av" style="background:rgba(0,229,255,.15);color:#00e5ff">VG</div><div><div class="cn">Victor Glover</div><div class="cr">Piloto · NASA</div></div><div class="cf">🇺🇸</div></div>
+    <div class="crew-item"><div class="av" style="background:rgba(180,130,255,.15);color:#b39ddb">CK</div><div><div class="cn">Christina Koch</div><div class="cr">Esp. de Missão · NASA</div></div><div class="cf">🇺🇸</div></div>
+    <div class="crew-item"><div class="av" style="background:rgba(255,90,90,.15);color:#ef9a9a">JH</div><div><div class="cn">Jeremy Hansen</div><div class="cr">Esp. de Missão · CSA</div></div><div class="cf">🇨🇦</div></div>
+  </div>
+  <div class="ic">
+    <h3>Dados Técnicos</h3>
+    <div class="fact"><span class="fk">Veículo Lançador</span><span class="fv">SLS Block 1</span></div>
+    <div class="fact"><span class="fk">Nave</span><span class="fv">Orion MPCV</span></div>
+    <div class="fact"><span class="fk">Plataforma</span><span class="fk" style="color:var(--white)">Pad 39B · Kennedy Space Center</span></div>
+    <div class="fact"><span class="fk">Tipo de Trajetória</span><span class="fv">Retorno Livre Lunar</span></div>
+    <div class="fact"><span class="fk">Distância máx. Terra</span><span class="fv">~450.000 km</span></div>
+    <div class="fact"><span class="fk">Reentrada</span><span class="fv">~40.000 km/h</span></div>
+    <div class="fact"><span class="fk">Splashdown</span><span class="fv">Oceano Pacífico</span></div>
+    <div class="fact"><span class="fk">Centro de Controle</span><span class="fv">JSC Houston, TX</span></div>
+  </div>
+</div>
+</div>
+
+<footer><div>Artemis II · <span>NASA / ESA / CSA</span> · Visualização interativa</div><div style="margin-top:6px;opacity:.5">Trajetória esquemática baseada em documentação oficial NASA</div></footer>
+
+<script>
+/* ── STARFIELD ── */
+(()=>{
+  const c=document.getElementById('starfield'),x=c.getContext('2d');
+  let s=[];
+  const rs=()=>{c.width=innerWidth;c.height=innerHeight;s=Array.from({length:350},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3+.2,a:Math.random()*.8+.1,sp:Math.random()*.008+.002,ph:Math.random()*Math.PI*2}));};
+  rs();window.addEventListener('resize',rs);
+  let t=0;
+  const dr=()=>{x.clearRect(0,0,c.width,c.height);t+=.01;s.forEach(s=>{const a=s.a*(.55+.45*Math.sin(s.ph+t*s.sp*8));x.beginPath();x.arc(s.x,s.y,s.r,0,Math.PI*2);x.fillStyle=`rgba(200,220,255,${a})`;x.fill();});requestAnimationFrame(dr);};
+  dr();
+})();
+
+/* ── STEPS DATA ── */
+const STEPS = [
+  {n:1,  col:'#00e676', title:'Lançamento',            desc:'Decolagem do Pad 39B, KSC, Flórida. Aceleração inicial pelo SLS Block 1.'},
+  {n:2,  col:'#00e676', title:'Jettison Boosters/LAS', desc:'Separação dos boosters laterais, fairings e sistema de abandono de lançamento.'},
+  {n:3,  col:'#00e676', title:'Core Stage MECO',       desc:'Motor principal do Core Stage encerrado. Separação do estágio central.'},
+  {n:4,  col:'#00e676', title:'Inserção em Órbita',   desc:'ICPS queima para inserção na órbita inicial de estacionamento (~185 km).'},
+  {n:5,  col:'#00e676', title:'Elevação do Perigeu',   desc:'Manobra de elevação do perigeu. Início do checkout de 24h da nave.'},
+  {n:6,  col:'#00e676', title:'Prox Ops Demo',         desc:'Demonstração de operações de proximidade e controle manual da Orion por ~2h.'},
+  {n:7,  col:'#00e676', title:'Elevação do Apogeu',    desc:'Queima para órbita alta (High Earth Orbit). Checkout de suporte de vida.'},
+  {n:8,  col:'#ffd740', title:'Descarte do ICPS',      desc:'ICPS separado e descartado em trajetória heliocêntrica (Earth disposal burn).'},
+  {n:9,  col:'#00e676', title:'TLI — Injeção Trans-Lunar', desc:'Queima do motor principal da Orion (ESM). Trajetória de retorno livre iniciada.'},
+  {n:10, col:'#00e676', title:'Trânsito Terra→Lua',    desc:'~4 dias de trânsito. Checkouts de equipamentos de habitação e exercício.'},
+  {n:11, col:'#40c4ff', title:'Sobrevoo Lunar',        desc:'Closest approach: ~7.400 km (4.000 nmi) da superfície lunar. Ponto de virada.'},
+  {n:12, col:'#40c4ff', title:'Correção de Retorno',   desc:'Queimas RTC (Return Trajectory Correction) para apontar para a atmosfera terrestre.'},
+  {n:13, col:'#40c4ff', title:'Trânsito Lua→Terra',    desc:'~4 dias de retorno. Monitoramento contínuo do JSC Houston.'},
+  {n:14, col:'#40c4ff', title:'Separação CM/SM',       desc:'Cápsula de Comando separa do Módulo de Serviço Europeu (ESM) antes da reentrada.'},
+  {n:15, col:'#40c4ff', title:'Reentrada & Splashdown',desc:'Reentrada atmosférica a ~40.000 km/h. Amerissagem no Oceano Pacífico.'},
+];
+
+/* ── STEPS GRID ── */
+const sg = document.getElementById('stepsGrid');
+STEPS.forEach(s=>{
+  sg.innerHTML += `<div class="step-card">
+    <div class="step-num" style="border-color:${s.col};color:${s.col};background:${s.col}18">${s.n}</div>
+    <div><div class="step-title">${s.title}</div><div class="step-desc">${s.desc}</div></div>
+  </div>`;
+});
+
+/* ── MAIN CANVAS ── */
+const mc = document.getElementById('mc');
+const ctx = mc.getContext('2d');
+let playing = true, spd = 1, animT = 0;
+let W, H, DPR;
+
+function resizeMC(){
+  const wrap = mc.parentElement;
+  W = wrap.clientWidth;
+  H = Math.round(W * 0.50);
+  DPR = window.devicePixelRatio || 1;
+  mc.width = W * DPR;
+  mc.height = H * DPR;
+  mc.style.height = H + 'px';
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(DPR, DPR);
+}
+resizeMC();
+window.addEventListener('resize', resizeMC);
+
+/* ── TRAJECTORY MATH ── */
+// All positions defined as fraction of W/H
+// Earth center: (0.18, 0.52), Moon center: (0.84, 0.52)
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function bezier3(p0,p1,p2,p3,t){
+  const mt=1-t;
+  return {
+    x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+    y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y,
+  };
+}
+
+// Key positions (normalized 0-1 relative to W, H)
+const EP = ()=>({x:W*0.165, y:H*0.52}); // Earth
+const MP = ()=>({x:W*0.845, y:H*0.52}); // Moon
+const ER = ()=> Math.min(W,H)*0.11;      // Earth radius
+const MR = ()=> Math.min(W,H)*0.075;     // Moon radius
+
+// Build path segments
+function buildPath(){
+  const ex=W*0.165, ey=H*0.52;
+  const mx=W*0.845, my=H*0.52;
+  const er=ER(), mr=MR();
+
+  // Earth orbit loop (steps 1-7): ellipse around Earth
+  // Outbound arc (steps 9-11): Earth → Moon, curves upward then down
+  // Moon flyby arc (step 11): around moon top
+  // Return arc (steps 12-15): Moon → Earth, curves below midline
+
+  // Outbound control points
+  const ob_p0 = {x:ex, y:ey-er*1.5};              // departs top of Earth orbit
+  const ob_p1 = {x:ex+(mx-ex)*0.28, y:ey-H*0.28}; // arcs high
+  const ob_p2 = {x:ex+(mx-ex)*0.70, y:ey-H*0.18};
+  const ob_p3 = {x:mx-mr*1.1, y:my-mr*0.9};        // arrives near Moon
+
+  // Moon arc (around top-far side)
+  const moonArcStart = -Math.PI*0.55;
+  const moonArcEnd   = Math.PI*0.55;
+
+  // Return arc
+  const ret_p0 = {x:mx-mr*0.9, y:my+mr*1.1};
+  const ret_p1 = {x:ex+(mx-ex)*0.70, y:ey+H*0.22};
+  const ret_p2 = {x:ex+(mx-ex)*0.28, y:ey+H*0.18};
+  const ret_p3 = {x:ex, y:ey+er*1.5};
+
+  // ICPS disposal: branches off near step 8 point
+  const icps_start = bezier3(ob_p0, ob_p1, ob_p2, ob_p3, 0.22);
+  const icps_ctrl  = {x:icps_start.x+W*0.05, y:icps_start.y-H*0.25};
+  const icps_end   = {x:icps_start.x+W*0.12, y:icps_start.y-H*0.38};
+
+  return { ob_p0,ob_p1,ob_p2,ob_p3, moonArcStart, moonArcEnd, ret_p0,ret_p1,ret_p2,ret_p3,
+           icps_start, icps_ctrl, icps_end };
+}
+
+// Waypoints: {frac: 0-1 along full path, step index}
+// Phases: 0.0-0.08 = earth orbit; 0.08-0.50 = outbound; 0.50-0.65 = moon flyby; 0.65-1.0 = return
+const WAYPOINT_FRACS = [
+  0.02,  // 1 launch
+  0.04,  // 2 jettison
+  0.055, // 3 MECO
+  0.07,  // 4 orbit insertion
+  0.085, // 5 perigee raise
+  0.11,  // 6 prox ops
+  0.155, // 7 apogee raise
+  0.22,  // 8 ICPS disposal
+  0.28,  // 9 TLI
+  0.42,  // 10 transit
+  0.56,  // 11 lunar flyby
+  0.70,  // 12 return correction
+  0.82,  // 13 transit return
+  0.91,  // 14 CM/SM separation
+  0.97,  // 15 splashdown
+];
+
+function getPathPos(frac, path){
+  const ex=W*0.165, ey=H*0.52, er=ER();
+  const mx=W*0.845, my=H*0.52, mr=MR();
+
+  // Phase 0: Earth orbit (0 → 0.16)
+  if(frac < 0.16){
+    const t = frac/0.16;
+    // Ellipse orbit around Earth, going counter-clockwise starting top
+    const angle = -Math.PI/2 + t*Math.PI*1.75; // 315 degrees sweep
+    const orx = er*1.65, ory = er*1.1;
+    return { x: ex+orx*Math.cos(angle), y: ey+ory*Math.sin(angle), phase:'orbit' };
+  }
+  // Phase 1: Outbound (0.16 → 0.55)
+  if(frac < 0.55){
+    const t=(frac-0.16)/0.39;
+    return { ...bezier3(path.ob_p0,path.ob_p1,path.ob_p2,path.ob_p3,t), phase:'outbound' };
+  }
+  // Phase 2: Moon flyby (0.55 → 0.68)
+  if(frac < 0.68){
+    const t=(frac-0.55)/0.13;
+    const angle = path.moonArcStart + (path.moonArcEnd-path.moonArcStart)*t;
+    return { x: mx+mr*1.18*Math.cos(angle), y: my+mr*1.18*Math.sin(angle), phase:'flyby' };
+  }
+  // Phase 3: Return (0.68 → 1.0)
+  const t=(frac-0.68)/0.32;
+  return { ...bezier3(path.ret_p0,path.ret_p1,path.ret_p2,path.ret_p3,t), phase:'return' };
+}
+
+function glow(x,y,r,rgb,a=0.6){
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,`rgba(${rgb},${a})`);
+  g.addColorStop(1,`rgba(${rgb},0)`);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+}
+
+function arrow(x,y,angle,size,color){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(size,0);
+  ctx.lineTo(-size*0.6,-size*0.5);
+  ctx.lineTo(-size*0.3,0);
+  ctx.lineTo(-size*0.6,size*0.5);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+const trail = [];
+
+function drawFrame(){
+  ctx.clearRect(0,0,W,H);
+
+  // Deep space background
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#020614');
+  bg.addColorStop(1,'#04081f');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  const ex=W*0.165, ey=H*0.52, er=ER();
+  const mx=W*0.845, my=H*0.52, mr=MR();
+  const path = buildPath();
+
+  /* ── FAINT GRID ── */
+  ctx.strokeStyle='rgba(80,120,255,0.04)';
+  ctx.lineWidth=1;
+  for(let i=0;i<W;i+=W/16){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+  for(let i=0;i<H;i+=H/8){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+
+  /* ── EARTH ORBIT RING (dashed) ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(0,230,120,0.12)';
+  ctx.lineWidth=1.2;
+  ctx.setLineDash([4,8]);
+  ctx.beginPath(); ctx.ellipse(ex,ey,er*1.65,er*1.1,0,0,Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  /* ── OUTBOUND PATH (ghost) ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(0,230,120,0.13)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([5,9]);
+  ctx.beginPath();
+  ctx.moveTo(path.ob_p0.x,path.ob_p0.y);
+  ctx.bezierCurveTo(path.ob_p1.x,path.ob_p1.y,path.ob_p2.x,path.ob_p2.y,path.ob_p3.x,path.ob_p3.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  /* ── MOON ARC (ghost) ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(0,200,255,0.12)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([5,9]);
+  ctx.beginPath();
+  ctx.arc(mx,my,mr*1.18,path.moonArcStart,path.moonArcEnd,false);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  /* ── RETURN PATH (ghost) ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(64,196,255,0.13)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([5,9]);
+  ctx.beginPath();
+  ctx.moveTo(path.ret_p0.x,path.ret_p0.y);
+  ctx.bezierCurveTo(path.ret_p1.x,path.ret_p1.y,path.ret_p2.x,path.ret_p2.y,path.ret_p3.x,path.ret_p3.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  /* ── ICPS DISPOSAL (dashed gold) ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(255,215,64,0.45)';
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([5,7]);
+  ctx.beginPath();
+  ctx.moveTo(path.icps_start.x,path.icps_start.y);
+  ctx.quadraticCurveTo(path.icps_ctrl.x,path.icps_ctrl.y,path.icps_end.x,path.icps_end.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // ICPS label
+  ctx.fillStyle='rgba(255,215,64,0.7)';
+  ctx.font=`400 ${H*0.024}px Roboto Mono, monospace`;
+  ctx.textAlign='center';
+  ctx.fillText('ICPS disposal',path.icps_end.x,path.icps_end.y-H*0.025);
+  // ICPS craft icon
+  ctx.fillStyle='rgba(255,215,64,0.5)';
+  ctx.beginPath(); ctx.arc(path.icps_end.x,path.icps_end.y,H*0.012,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  /* ── DIRECTION ARROWS on ghost paths ── */
+  // Outbound arrows
+  [0.25, 0.55, 0.8].forEach(ft=>{
+    const pos = bezier3(path.ob_p0,path.ob_p1,path.ob_p2,path.ob_p3,ft);
+    const pos2 = bezier3(path.ob_p0,path.ob_p1,path.ob_p2,path.ob_p3,ft+0.02);
+    arrow(pos.x,pos.y,Math.atan2(pos2.y-pos.y,pos2.x-pos.x),H*0.014,'rgba(0,230,120,0.35)');
+  });
+  // Return arrows
+  [0.2, 0.55, 0.82].forEach(ft=>{
+    const pos = bezier3(path.ret_p0,path.ret_p1,path.ret_p2,path.ret_p3,ft);
+    const pos2 = bezier3(path.ret_p0,path.ret_p1,path.ret_p2,path.ret_p3,ft+0.02);
+    arrow(pos.x,pos.y,Math.atan2(pos2.y-pos.y,pos2.x-pos.x),H*0.014,'rgba(64,196,255,0.35)');
+  });
+
+  /* ── SUN (partial left edge) ── */
+  const sx=-W*0.03, sy=H*0.5, sr=W*0.12;
+  glow(sx,sy,sr*2.8,'255,200,50',0.22);
+  const sunG=ctx.createRadialGradient(sx,sy,0,sx,sy,sr);
+  sunG.addColorStop(0,'#fffde7'); sunG.addColorStop(0.3,'#ffeb3b');
+  sunG.addColorStop(0.7,'#ff9800'); sunG.addColorStop(1,'rgba(255,80,0,.4)');
+  ctx.fillStyle=sunG; ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fill();
+
+  /* ── EARTH ── */
+  glow(ex,ey,er*3.2,'30,100,255',0.22);
+  // Atmosphere ring
+  ctx.save();
+  ctx.strokeStyle='rgba(100,200,255,0.2)'; ctx.lineWidth=er*0.25;
+  ctx.beginPath(); ctx.arc(ex,ey,er+er*0.12,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+  const eg=ctx.createRadialGradient(ex-er*.3,ey-er*.3,0,ex,ey,er);
+  eg.addColorStop(0,'#b3e5ff'); eg.addColorStop(0.25,'#29b6f6');
+  eg.addColorStop(0.6,'#0277bd'); eg.addColorStop(1,'#012a5e');
+  ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,er,0,Math.PI*2); ctx.fill();
+  // Continent blobs
+  ctx.fillStyle='rgba(56,180,56,0.5)';
+  [[-.22,-.18,.28,.16,-.25],[.15,.12,.22,.15,.45]].forEach(([dx,dy,rx,ry,a])=>{
+    ctx.beginPath(); ctx.ellipse(ex+dx*er,ey+dy*er,rx*er,ry*er,a,0,Math.PI*2); ctx.fill();
+  });
+  // Cloud wisps
+  ctx.fillStyle='rgba(255,255,255,0.12)';
+  ctx.beginPath(); ctx.ellipse(ex-.05*er,ey-.3*er,er*.4,er*.08,.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(ex+.2*er,ey+.2*er,er*.3,er*.07,-.2,0,Math.PI*2); ctx.fill();
+  // Label
+  ctx.fillStyle='rgba(150,220,255,.9)'; ctx.font=`700 ${H*.033}px Exo,sans-serif`;
+  ctx.textAlign='center'; ctx.fillText('TERRA',ex,ey+er+H*.048);
+
+  /* ── MOON ── */
+  glow(mx,my,mr*2.8,'120,100,200',0.2);
+  const mg=ctx.createRadialGradient(mx+mr*.22,my-mr*.22,0,mx,my,mr);
+  mg.addColorStop(0,'#d0d0da'); mg.addColorStop(.4,'#909098');
+  mg.addColorStop(.75,'#555560'); mg.addColorStop(1,'#20202c');
+  ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fill();
+  // Craters
+  [[-.28,-.2,.13,.35],[.1,.25,.09,.28],[-.06,.04,.15,.18],[.3,-.1,.06,.28],[-.45,.06,.07,.4]].forEach(([dx,dy,r,d])=>{
+    ctx.beginPath(); ctx.arc(mx+dx*mr,my+dy*mr,r*mr,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,0,0,${d})`; ctx.fill();
+    ctx.strokeStyle='rgba(180,180,200,0.2)'; ctx.lineWidth=.8; ctx.stroke();
+  });
+  // Shadow (far side)
+  const dg=ctx.createLinearGradient(mx-mr,my,mx+mr*.5,my);
+  dg.addColorStop(0,'rgba(0,0,12,.85)'); dg.addColorStop(.5,'rgba(0,0,12,.5)');
+  dg.addColorStop(.75,'rgba(0,0,12,.1)'); dg.addColorStop(1,'rgba(0,0,12,0)');
+  ctx.save(); ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.clip();
+  ctx.fillStyle=dg; ctx.fillRect(mx-mr*1.1,my-mr*1.1,mr*1.65,mr*2.2);
+  ctx.restore();
+  // Moon labels
+  ctx.fillStyle='rgba(200,190,230,.9)'; ctx.font=`700 ${H*.032}px Exo,sans-serif`;
+  ctx.textAlign='center'; ctx.fillText('LUA',mx,my+mr+H*.048);
+  ctx.fillStyle='rgba(160,120,220,.6)'; ctx.font=`400 ${H*.022}px Roboto Mono,monospace`;
+  ctx.fillText('4.000 nmi flyby',mx,my+mr+H*.082);
+
+  /* ── ANIMATED TRAIL ── */
+  const T = animT%1;
+  const cur = getPathPos(T, path);
+  trail.push({...cur, t:T});
+  if(trail.length>90) trail.shift();
+  for(let i=1;i<trail.length;i++){
+    const p=i/trail.length;
+    const phase=trail[i].phase;
+    let col;
+    if(phase==='orbit'||phase==='outbound') col=`rgba(0,230,120,${p*.65})`;
+    else if(phase==='flyby') col=`rgba(200,100,255,${p*.7})`;
+    else col=`rgba(64,196,255,${p*.65})`;
+    ctx.beginPath(); ctx.moveTo(trail[i-1].x,trail[i-1].y);
+    ctx.lineTo(trail[i].x,trail[i].y);
+    ctx.strokeStyle=col; ctx.lineWidth=p*3; ctx.stroke();
+  }
+
+  /* ── WAYPOINT DOTS ── */
+  WAYPOINT_FRACS.forEach((frac,i)=>{
+    const pos = getPathPos(frac, path);
+    const step = STEPS[i];
+    const isActive = Math.abs(T - frac) < 0.04;
+    const dotR = isActive ? H*.016 : H*.011;
+    glow(pos.x,pos.y,dotR*3.5,isActive?'0,229,255':'120,120,200',isActive?.5:.2);
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,dotR,0,Math.PI*2);
+    ctx.fillStyle=isActive?step.col+'aa':step.col+'55'; ctx.fill();
+    ctx.strokeStyle=step.col; ctx.lineWidth=isActive?2:1.2;
+    ctx.stroke();
+    // Step number
+    ctx.fillStyle= isActive?'#ffffff':step.col;
+    ctx.font=`${isActive?'700':'500'} ${H*(isActive?.024:.018)}px Roboto Mono,monospace`;
+    ctx.textAlign='center';
+    ctx.fillText(i+1, pos.x, pos.y+H*.006);
+    // Step name on hover/active
+    if(isActive){
+      ctx.fillStyle='rgba(255,255,255,.9)';
+      ctx.font=`600 ${H*.026}px Exo,sans-serif`;
+      // Smart positioning
+      let lx=pos.x, ly=pos.y-H*.04;
+      if(pos.x<W*.25) lx+=W*.07;
+      if(pos.x>W*.75) lx-=W*.07;
+      if(pos.y<H*.25) ly+=H*.06;
+      ctx.fillText(step.title,lx,ly);
+    }
+  });
+
+  /* ── SPACECRAFT ── */
+  const prev = getPathPos(Math.max(0,T-.008), path);
+  const scAngle = Math.atan2(cur.y-prev.y, cur.x-prev.x);
+  const ss = H*.022;
+  glow(cur.x,cur.y,ss*4,'0,229,255',.6);
+  ctx.save(); ctx.translate(cur.x,cur.y); ctx.rotate(scAngle);
+  // Body
+  ctx.fillStyle='#e8f4ff';
+  ctx.beginPath(); ctx.moveTo(ss*.9,0); ctx.lineTo(-ss*.5,-ss*.4); ctx.lineTo(-ss*.3,0); ctx.lineTo(-ss*.5,ss*.4); ctx.closePath(); ctx.fill();
+  // Solar panels
+  ctx.fillStyle='rgba(0,170,255,.75)';
+  ctx.fillRect(-ss*.08,-ss*.95,ss*.4,.32*ss);
+  ctx.fillRect(-ss*.08,ss*.63,ss*.4,.32*ss);
+  // Engine glow
+  ctx.fillStyle='rgba(80,200,255,.7)';
+  ctx.beginPath(); ctx.ellipse(-ss*.55,0,ss*.32,ss*.16,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  /* ── PHASE LABEL UPDATE ── */
+  const stepIdx = WAYPOINT_FRACS.reduce((closest,frac,i)=>{
+    return Math.abs(T-frac) < Math.abs(T-WAYPOINT_FRACS[closest]) ? i : closest;
+  }, 0);
+  document.getElementById('phLbl').textContent = `— Etapa ${stepIdx+1}: ${STEPS[stepIdx].title} —`;
+
+  /* ── "PROX OPS" LABEL ── */
+  const popPos = getPathPos(0.11, path);
+  ctx.fillStyle='rgba(0,230,120,0.55)'; ctx.font=`400 ${H*.020}px Roboto Mono,monospace`;
+  ctx.textAlign='left'; ctx.fillText('Prox Ops Demo',popPos.x+H*.02,popPos.y+H*.03);
+
+  /* ── DISTANCE MARKER ── */
+  ctx.save();
+  ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1; ctx.setLineDash([3,8]);
+  ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font=`300 ${H*.020}px Roboto Mono,monospace`;
+  ctx.textAlign='center';
+  ctx.fillText('~386.400 km',(ex+mx)/2,ey+H*.038);
+  ctx.restore();
+
+  if(playing) animT += .0016*spd;
+  requestAnimationFrame(drawFrame);
+}
+drawFrame();
+
+function togglePlay(){
+  playing=!playing;
+  document.getElementById('btnPlay').textContent=playing?'Pausar':'Retomar';
+}
+function setSpd(s){
+  spd=s;
+  document.querySelectorAll('.btn').forEach(b=>{
+    if(b.id==='btnPlay') return;
+    if(b.textContent===s+'×') b.classList.add('on'); else b.classList.remove('on');
+  });
+}
+function resetAnim(){ animT=0; trail.length=0; }
+</script>
+</body>
+</html>

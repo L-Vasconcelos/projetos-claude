@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Dashboard Cotações (Dash)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["app.py"],
+      "port": 8050
+    },
+    {
+      "name": "Dashboard Faturamento (HTML estático)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "C:\\Users\\lsilva\\OneDrive - Meridional TCS Ind e Com de Oleos S A\\Dados\\IA\\claude_code"],
+      "port": 8080,
+      "autoPort": false
+    }
+  ]
+}

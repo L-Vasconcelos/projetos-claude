@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Plano Elite — Luis Vasconelos</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --card: #181818;
+      --card2: #1e1e1e;
+      --border: #252525;
+      --border2: #333;
+      --text: #f0f0f0;
+      --text2: #aaa;
+      --text3: #666;
+      --green: #00d4aa;
+      --blue: #4a9eff;
+      --orange: #ff6b35;
+      --yellow: #ffd166;
+      --purple: #b57bee;
+      --red: #ff4f5e;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{overflow-x:hidden}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;line-height:1.5;overflow-x:hidden;width:100%}
+
+    /* ─── HEADER ─────────────────────────────── */
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:24px 0 0}
+    .header-inner{max-width:920px;margin:0 auto;padding:0 28px}
+    .profile-row{display:flex;align-items:center;gap:18px;margin-bottom:20px}
+    .avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;flex-shrink:0}
+    .profile-info h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+    .profile-stats{display:flex;gap:20px;margin-top:6px;flex-wrap:wrap}
+    .stat{font-size:12px;color:var(--text2)}.stat strong{color:var(--text);font-weight:600}
+    .goal-pill{background:linear-gradient(135deg,rgba(0,212,170,.12),rgba(74,158,255,.12));border:1px solid rgba(0,212,170,.3);border-radius:20px;padding:7px 14px;font-size:12px;color:var(--green);font-weight:600;margin-left:auto;white-space:nowrap}
+
+    /* macro bar */
+    .macro-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:0}
+    .macro-tile{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--border);border-radius:10px 10px 0 0;padding:12px 14px}
+    .macro-tile.p{border-top-color:var(--blue)}
+    .macro-tile.c{border-top-color:var(--yellow)}
+    .macro-tile.g{border-top-color:var(--orange)}
+    .macro-tile.k{border-top-color:var(--green)}
+    .macro-tile-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+    .macro-tile-val{font-size:22px;font-weight:800;margin-top:2px}
+    .macro-tile.p .macro-tile-val{color:var(--blue)}
+    .macro-tile.c .macro-tile-val{color:var(--yellow)}
+    .macro-tile.g .macro-tile-val{color:var(--orange)}
+    .macro-tile.k .macro-tile-val{color:var(--green)}
+    .macro-tile-sub{font-size:11px;color:var(--text3);margin-top:1px}
+
+    /* ─── TABS ───────────────────────────────── */
+    .tabs-wrap{max-width:920px;margin:0 auto;padding:18px 28px 0}
+    .tabs{display:flex;gap:6px;border-bottom:1px solid var(--border)}
+    .tab-btn{background:none;border:1px solid transparent;border-radius:8px 8px 0 0;color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;padding:9px 18px;transition:all .18s;border-bottom:none;position:relative;bottom:-1px}
+    .tab-btn:hover{color:var(--text);background:rgba(255,255,255,.04)}
+    .tab-btn.active{color:var(--text);background:var(--surface);border-color:var(--border);border-bottom-color:var(--surface)}
+
+    /* ─── MAIN ───────────────────────────────── */
+    .main{max-width:920px;margin:0 auto;padding:24px 28px 60px}
+    .tab-pane{display:none}.tab-pane.active{display:block}
+
+    /* ─── DAY SELECTOR ───────────────────────── */
+    .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
+    .day-pill{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:all .18s;user-select:none}
+    .day-pill:hover{border-color:var(--border2);background:var(--card2)}
+    .day-pill.active{border-color:var(--green);background:rgba(0,212,170,.08)}
+    .day-pill.rest{opacity:.55}
+    .dp-name{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:5px}
+    .day-pill.active .dp-name{color:var(--text)}
+    .dp-emoji{font-size:20px;display:block;margin-bottom:3px}
+    .dp-type{font-size:10px;font-weight:700;color:var(--green)}
+    .day-pill.rest .dp-type{color:var(--text3)}
+
+    /* ─── WORKOUT CARD ───────────────────────── */
+    .wk-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .wk-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+    .wk-badge{width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;flex-shrink:0}
+    .wk-title{font-size:17px;font-weight:700}
+    .wk-sub{font-size:12px;color:var(--text2);margin-top:2px}
+    .wk-tags{display:flex;gap:8px;padding:13px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .tag{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+    .tag.green{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.3);color:var(--green)}
+    .tag.blue{background:rgba(74,158,255,.1);border-color:rgba(74,158,255,.3);color:var(--blue)}
+    .tag.orange{background:rgba(255,107,53,.1);border-color:rgba(255,107,53,.3);color:var(--orange)}
+    .tag.purple{background:rgba(181,123,238,.1);border-color:rgba(181,123,238,.3);color:var(--purple)}
+    .tag.yellow{background:rgba(255,209,102,.1);border-color:rgba(255,209,102,.3);color:var(--yellow)}
+
+    .section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);padding:14px 22px 8px}
+    .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border)}
+    .ex{background:var(--card);padding:13px 18px}
+    .ex.full{grid-column:1/-1}
+    .ex-name{font-size:13px;font-weight:600}
+    .ex-sets{font-size:12px;color:var(--text2);margin-top:3px}
+    .ex-tip{font-size:11px;color:var(--text3);margin-top:3px;font-style:italic}
+
+    /* cardio section */
+    .cardio-box{background:rgba(74,158,255,.05);border-top:1px solid rgba(74,158,255,.2);padding:0}
+    .cardio-opts-row{display:flex;gap:6px;padding:12px 18px 10px;flex-wrap:wrap;border-bottom:1px solid rgba(74,158,255,.12);align-items:center}
+    .cardio-opts-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-right:2px;white-space:nowrap}
+    .co-opt{background:transparent;border:1px solid var(--border2);border-radius:16px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .18s;white-space:nowrap}
+    .co-opt:hover{border-color:var(--blue);color:var(--blue);background:rgba(74,158,255,.06)}
+    .co-opt.sel{background:rgba(74,158,255,.14);border-color:var(--blue);color:var(--blue)}
+    .cardio-body{padding:14px 18px}
+    .cardio-head{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .cardio-steps{display:flex;flex-direction:column;gap:7px}
+    .cs{display:flex;align-items:flex-start;gap:10px;font-size:12px}
+    .cs-num{width:19px;height:19px;border-radius:50%;background:rgba(74,158,255,.2);color:var(--blue);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .cs-txt{color:var(--text2)}.cs-txt strong{color:var(--text)}
+    /* cardio-only options */
+    .co-opts-row{display:flex;gap:6px;padding:12px 18px;flex-wrap:wrap;border-bottom:1px solid rgba(74,158,255,.15);align-items:center}
+    .co-opts-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-right:2px}
+
+    /* rest card */
+    .rest-card{background:linear-gradient(135deg,rgba(255,209,102,.05),rgba(181,123,238,.05));border:1px solid rgba(255,209,102,.15);border-radius:16px;padding:32px;text-align:center}
+    .rest-icon{font-size:48px;margin-bottom:12px}
+    .rest-title{font-size:18px;font-weight:700;margin-bottom:8px}
+    .rest-sub{font-size:13px;color:var(--text2);max-width:340px;margin:0 auto 16px}
+    .rest-tips{display:flex;flex-direction:column;gap:8px;text-align:left;max-width:320px;margin:0 auto}
+    .rest-tip{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+
+    /* cardio-only */
+    .co-card{background:linear-gradient(135deg,rgba(74,158,255,.06),rgba(181,123,238,.06));border:1px solid rgba(74,158,255,.2);border-radius:16px;overflow:hidden}
+    .co-head{padding:18px 22px;border-bottom:1px solid rgba(74,158,255,.15);display:flex;align-items:center;gap:14px}
+    .co-badge{width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .co-blocks{display:grid;grid-template-columns:1fr;gap:1px;background:rgba(74,158,255,.1);border-top:1px solid rgba(74,158,255,.15)}
+    .co-block{background:var(--card);padding:14px 22px;display:flex;align-items:center;gap:14px}
+    .co-num{width:30px;height:30px;border-radius:8px;background:rgba(74,158,255,.15);color:var(--blue);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .co-info{}
+    .co-title{font-size:13px;font-weight:600}
+    .co-detail{font-size:12px;color:var(--text2);margin-top:2px}
+    .co-zone{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;display:inline-block;margin-top:4px}
+    .co-zone.hiit{background:rgba(255,107,53,.15);color:var(--orange)}
+    .co-zone.liss{background:rgba(0,212,170,.12);color:var(--green)}
+    .co-zone.mod{background:rgba(74,158,255,.15);color:var(--blue)}
+
+    /* ─── MEAL TIMELINE ──────────────────────── */
+    .daily-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+    .dm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+    .dm-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px}
+    .dm-val{font-size:19px;font-weight:800}
+    .dm.dp .dm-val{color:var(--blue)}
+    .dm.dc .dm-val{color:var(--yellow)}
+    .dm.dg .dm-val{color:var(--orange)}
+    .dm.dk .dm-val{color:var(--green)}
+    .bar{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:2px}
+    .bar-fill.bp{background:var(--blue);width:75%}
+    .bar-fill.bc{background:var(--yellow);width:55%}
+    .bar-fill.bg{background:var(--orange);width:35%}
+    .bar-fill.bk{background:var(--green);width:100%}
+
+    .tl{display:flex;flex-direction:column}
+    .tl-row{display:grid;grid-template-columns:56px 18px 1fr;gap:0 14px}
+    .tl-time{font-size:11px;font-weight:700;color:var(--text2);text-align:right;padding-top:18px;letter-spacing:.3px}
+    .tl-conn{display:flex;flex-direction:column;align-items:center}
+    .tl-dot{width:9px;height:9px;border-radius:50%;margin-top:20px;flex-shrink:0}
+    .tl-line{width:2px;flex:1;background:var(--border);margin-top:4px}
+    .tl-row:last-child .tl-line{display:none}
+    .tl-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px 17px;margin-bottom:10px}
+    .tl-card.training{background:rgba(0,212,170,.05);border-color:rgba(0,212,170,.25)}
+    .meal-title{font-size:14px;font-weight:700;margin-bottom:4px}
+    .meal-foods{font-size:12px;color:var(--text2);margin-bottom:5px;line-height:1.45}
+    .meal-note{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:7px}
+    .meal-macro-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+    .mb{padding:3px 9px;border-radius:14px;font-size:11px;font-weight:700}
+    .mb.mp{background:rgba(74,158,255,.15);color:#7ab8ff}
+    .mb.mc{background:rgba(255,209,102,.15);color:#ffd166}
+    .mb.mg{background:rgba(255,107,53,.15);color:#ff9a6c}
+    .kcal-txt{font-size:11px;color:var(--text3);margin-left:auto}
+    .training-txt{font-size:12px;color:var(--green);font-weight:600}
+
+    /* ─── PROTOCOL ───────────────────────────── */
+    .proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .proto-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+    .proto-card.full{grid-column:1/-1}
+    .proto-title{font-size:13px;font-weight:700;margin-bottom:13px;display:flex;align-items:center;gap:7px}
+    .proto-item{display:flex;gap:9px;margin-bottom:10px;font-size:12px;line-height:1.45}
+    .proto-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--green)}
+    .proto-dot.blue{background:var(--blue)}
+    .proto-dot.orange{background:var(--orange)}
+    .proto-dot.yellow{background:var(--yellow)}
+    .proto-txt{color:var(--text2)}.proto-txt strong{color:var(--text)}
+
+    table.suppl{width:100%;border-collapse:collapse}
+    table.suppl th,table.suppl td{padding:9px 11px;text-align:left;font-size:12px;border-bottom:1px solid var(--border)}
+    table.suppl th{color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+    table.suppl td{color:var(--text2)}
+    table.suppl td:first-child{color:var(--text);font-weight:600}
+
+    .week-overview{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+    .wo-row{display:flex;padding:11px 18px;border-bottom:1px solid var(--border);align-items:center;gap:14px;font-size:13px}
+    .wo-row:last-child{border-bottom:none}
+    .wo-day{width:28px;font-weight:700;color:var(--text2)}
+    .wo-type{flex:1;font-weight:600}
+    .wo-cardio{font-size:11px;color:var(--blue)}
+    .wo-vol{font-size:11px;color:var(--text3);margin-left:auto}
+
+    .phase-card{background:linear-gradient(135deg,rgba(0,212,170,.06),rgba(74,158,255,.06));border:1px solid rgba(0,212,170,.2);border-radius:12px;padding:16px 18px;margin-top:14px}
+    .phase-title{font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px}
+    .phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .phase-item{text-align:center;padding:12px 8px;background:rgba(0,0,0,.2);border-radius:8px}
+    .phase-item-num{font-size:20px;font-weight:800;color:var(--green)}
+    .phase-item-label{font-size:11px;color:var(--text2);margin-top:3px}
+
+    /* ─── PLAN SELECTOR ─────────────────────── */
+    .plan-selector{display:flex;gap:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:18px}
+    .plan-btn{flex:1;background:none;border:none;border-radius:9px;padding:10px 14px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .plan-btn .pb-label{font-size:13px;font-weight:700;color:var(--text2);transition:color .22s}
+    .plan-btn .pb-kcal{font-size:11px;color:var(--text3);font-weight:500;transition:color .22s}
+    .plan-btn .pb-tag{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-radius:8px;padding:2px 7px;margin-top:2px;opacity:0;transition:opacity .22s}
+    .plan-btn.active{background:var(--card2)}
+    .plan-btn.active .pb-label{color:var(--text)}
+    .plan-btn.active .pb-tag{opacity:1}
+    .plan-btn.active.pa .pb-label{color:var(--green)}
+    .plan-btn.active.pa .pb-tag{background:rgba(0,212,170,.15);color:var(--green)}
+    .plan-btn.active.pb-b .pb-label{color:var(--orange)}
+    .plan-btn.active.pb-b .pb-tag{background:rgba(255,107,53,.15);color:var(--orange)}
+    .plan-divider{width:1px;background:var(--border);margin:6px 0;flex-shrink:0}
+    .plan-content{display:none}.plan-content.active{display:block}
+    .plan-b-alert{background:rgba(255,107,53,.07);border:1px solid rgba(255,107,53,.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start}
+    .plan-b-alert-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .plan-b-alert-text{font-size:12px;color:var(--text2);line-height:1.5}
+    .plan-b-alert-text strong{color:var(--orange)}
+
+    /* ─── BOTTOM NAV — oculto no desktop ────── */
+    .bottom-nav{display:none}
+
+    /* ─── SCROLL SEM BARRA VISÍVEL ───────────*/
+    .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .scroll-x::-webkit-scrollbar{display:none}
+
+    /* ══════════════════════════════════════════
+       MOBILE — tudo abaixo de 640px
+    ══════════════════════════════════════════*/
+    @media(max-width:640px){
+
+      /* ── CONTENÇÃO GERAL ─────────────────── */
+      .header,.header-inner,.tabs-wrap,.main{
+        width:100%;max-width:100%;
+      }
+      .header-inner,.main{padding-left:14px;padding-right:14px}
+
+      /* ── HEADER ──────────────────────────── */
+      .header{padding-top:14px}
+      .profile-row{flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:flex-start}
+      .avatar{width:44px;height:44px;font-size:15px;flex-shrink:0}
+      .profile-info{flex:1;min-width:0}
+      .profile-info h1{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .profile-stats{gap:6px 12px}
+      .stat{font-size:11px}
+      .goal-pill{width:100%;margin-left:0;text-align:center;font-size:11px;padding:7px 12px;border-radius:16px}
+
+      /* ── MACRO TILES ─────────────────────── */
+      .macro-row{grid-template-columns:1fr 1fr;gap:6px}
+      .macro-tile{padding:10px 12px}
+      .macro-tile-label{font-size:10px}
+      .macro-tile-val{font-size:19px}
+      .macro-tile-sub{font-size:9px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+      /* ── TABS ────────────────────────────── */
+      .tabs-wrap{padding:10px 0 0;overflow:hidden}
+      .tabs{
+        overflow-x:auto;-webkit-overflow-scrolling:touch;
+        scrollbar-width:none;display:flex;
+        padding:0 14px;gap:4px;
+        border-bottom:1px solid var(--border);
+        white-space:nowrap;
+      }
+      .tabs::-webkit-scrollbar{display:none}
+      .tab-btn{font-size:12px;padding:9px 14px;flex-shrink:0;white-space:nowrap}
+
+      /* ── CONTEÚDO PRINCIPAL ──────────────── */
+      .main{padding-top:16px;padding-bottom:88px}
+      .tab-pane{width:100%;overflow-x:hidden}
+
+      /* ── SELETOR DE DIAS — scroll horizontal */
+      .day-grid{
+        display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
+        scrollbar-width:none;
+        gap:7px;padding-bottom:6px;margin-bottom:14px;
+        width:100%;
+      }
+      .day-grid::-webkit-scrollbar{display:none}
+      .day-pill{flex:0 0 60px;width:60px;padding:9px 3px;border-radius:10px}
+      .dp-name{font-size:9px;margin-bottom:4px;letter-spacing:0}
+      .dp-emoji{font-size:18px;margin-bottom:2px}
+      .dp-type{font-size:9px}
+
+      /* ── WORKOUT CARD ────────────────────── */
+      .wk-card,.co-card{border-radius:12px;width:100%}
+      .wk-head,.co-head{padding:13px 14px;gap:10px}
+      .wk-badge,.co-badge{width:38px;height:38px;font-size:11px;border-radius:8px;flex-shrink:0}
+      .co-badge{font-size:18px}
+      .wk-title,.co-title-main{font-size:14px}
+      .wk-sub{font-size:11px}
+      .wk-tags{padding:8px 14px;gap:5px;flex-wrap:wrap}
+      .tag{font-size:10px;padding:3px 8px}
+      .section-label{padding:10px 14px 6px;font-size:10px}
+
+      /* ── EXERCÍCIOS — 1 coluna ───────────── */
+      .ex-grid{grid-template-columns:1fr}
+      .ex{padding:11px 14px}
+      .ex-name{font-size:13px}
+      .ex-sets{font-size:11px}
+      .ex-tip{font-size:10px}
+
+      /* ── OPÇÕES DE CARDIO — scroll horizontal */
+      .cardio-opts-row,.co-opts-row{
+        overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+        flex-wrap:nowrap;padding:9px 14px;gap:6px;align-items:center;
+      }
+      .cardio-opts-row::-webkit-scrollbar,.co-opts-row::-webkit-scrollbar{display:none}
+      .cardio-opts-label,.co-opts-label{flex-shrink:0;white-space:nowrap;font-size:9px;margin-right:2px}
+      .co-opt{flex-shrink:0;font-size:11px;padding:6px 12px;white-space:nowrap;min-height:32px}
+      .cardio-body{padding:12px 14px}
+      .cardio-head{font-size:12px;margin-bottom:8px}
+      .cs{font-size:11px;gap:8px}
+      .cs-num{width:18px;height:18px;font-size:10px;flex-shrink:0}
+      .cs-txt{line-height:1.45;font-size:11px}
+
+      /* ── CARDIO ONLY (quarta) ────────────── */
+      .co-blocks{width:100%}
+      .co-block{padding:11px 14px;gap:10px}
+      .co-num{width:28px;height:28px;font-size:11px}
+      .co-info .co-title{font-size:12px}
+      .co-info .co-detail{font-size:11px}
+
+      /* ── REST CARD ───────────────────────── */
+      .rest-card{padding:24px 16px;border-radius:12px}
+      .rest-icon{font-size:40px}
+      .rest-title{font-size:16px}
+      .rest-sub{font-size:12px}
+      .rest-tips{max-width:100%}
+      .rest-tip{font-size:12px;padding:9px 12px}
+
+      /* ── TIMELINE REFEIÇÕES ──────────────── */
+      .daily-macros{grid-template-columns:1fr 1fr;gap:8px}
+      .dm{padding:10px 12px;border-radius:9px}
+      .dm-label{font-size:9px}
+      .dm-val{font-size:17px}
+      .tl-row{grid-template-columns:42px 14px 1fr;gap:0 8px}
+      .tl-time{font-size:10px;padding-top:17px;letter-spacing:0}
+      .tl-dot{width:8px;height:8px;margin-top:20px}
+      .tl-card{padding:12px 13px;margin-bottom:8px;border-radius:10px}
+      .meal-title{font-size:13px}
+      .meal-foods{font-size:11px;margin-bottom:4px;line-height:1.4}
+      .meal-note{font-size:10px;margin-bottom:6px}
+      .meal-macro-row{gap:5px;flex-wrap:wrap}
+      .mb{font-size:10px;padding:2px 8px}
+      .kcal-txt{font-size:10px;width:100%;text-align:left;margin-left:0;margin-top:2px}
+      .training-txt{font-size:12px}
+
+      /* ── PROTOCOLO ───────────────────────── */
+      .proto-grid{grid-template-columns:1fr;gap:10px}
+      .proto-card{padding:14px;border-radius:12px}
+      .proto-card.full{padding:14px}
+      .proto-title{font-size:13px;margin-bottom:10px}
+      .proto-item{font-size:11px;margin-bottom:8px}
+      .proto-txt{line-height:1.45;font-size:11px}
+
+      /* ── VISÃO SEMANAL ───────────────────── */
+      .week-overview{border-radius:10px}
+      .wo-row{padding:9px 13px;font-size:11px;flex-wrap:wrap;gap:4px 10px}
+      .wo-day{font-size:12px}
+      .wo-vol{display:none}
+      .wo-cardio{font-size:10px;width:100%}
+
+      /* ── TABELA SUPLEMENTOS ──────────────── */
+      .proto-card.full{overflow-x:auto}
+      .proto-card.full > table.suppl{min-width:460px}
+      table.suppl th,table.suppl td{padding:8px 10px;font-size:11px}
+
+      /* ── FASE / PROJEÇÃO ─────────────────── */
+      .phase-card{padding:13px 14px;border-radius:10px}
+      .phase-title{font-size:12px}
+      .phase-grid{grid-template-columns:repeat(3,1fr);gap:6px}
+      .phase-item{padding:10px 4px;border-radius:7px}
+      .phase-item-num{font-size:15px}
+      .phase-item-label{font-size:9px}
+
+      /* ── BOTTOM NAV ──────────────────────── */
+      .bottom-nav{
+        display:flex;
+        position:fixed;
+        bottom:0;left:0;right:0;
+        background:rgba(17,17,17,0.96);
+        border-top:1px solid var(--border);
+        z-index:999;
+        /* Suporte a notch/home bar do iPhone */
+        padding-bottom:env(safe-area-inset-bottom,0px);
+      }
+      .bn-btn{
+        flex:1;background:none;border:none;
+        color:var(--text3);cursor:pointer;
+        display:flex;flex-direction:column;
+        align-items:center;justify-content:center;
+        gap:3px;padding:8px 4px;
+        -webkit-tap-highlight-color:transparent;
+        transition:color .18s;
+        min-height:54px;
+      }
+      .bn-btn.active{color:var(--green)}
+      .bn-icon{font-size:22px;line-height:1;display:block}
+      .bn-label{font-size:10px;font-weight:600;letter-spacing:.2px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<div class="header">
+  <div class="header-inner">
+    <div class="profile-row">
+      <div class="avatar">LV</div>
+      <div class="profile-info">
+        <h1>Luis Vasconelos</h1>
+        <div class="profile-stats">
+          <span class="stat">Idade <strong>27 anos</strong></span>
+          <span class="stat">Peso <strong>82 kg</strong></span>
+          <span class="stat">Altura <strong>174 cm</strong></span>
+          <span class="stat">IMC <strong>27.1</strong></span>
+          <span class="stat">TDEE <strong>~3.066 kcal</strong></span>
+        </div>
+      </div>
+      <div class="goal-pill">⚡ Recomposição Corporal — 3 meses</div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-tile p">
+        <div class="macro-tile-label">Proteína / dia</div>
+        <div class="macro-tile-val">218g</div>
+        <div class="macro-tile-sub">2.66 g/kg · 35% kcal</div>
+      </div>
+      <div class="macro-tile c">
+        <div class="macro-tile-label">Carboidrato / dia</div>
+        <div class="macro-tile-val">264g</div>
+        <div class="macro-tile-sub">41% kcal · pré/pós treino</div>
+      </div>
+      <div class="macro-tile g">
+        <div class="macro-tile-label">Gordura / dia</div>
+        <div class="macro-tile-val">65g</div>
+        <div class="macro-tile-sub">24% kcal · hormônios</div>
+      </div>
+      <div class="macro-tile k">
+        <div class="macro-tile-label">Calorias / dia</div>
+        <div class="macro-tile-val">2.510</div>
+        <div class="macro-tile-sub">déficit ~556 kcal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('treino',this)">Semana de treino</button>
+      <button class="tab-btn" onclick="switchTab('alimentar',this)">Plano alimentar</button>
+      <button class="tab-btn" onclick="switchTab('protocolo',this)">Protocolo e dicas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════════ -->
+<div class="main">
+
+  <!-- ────── TAB: TREINO ────── -->
+  <div id="tab-treino" class="tab-pane active">
+
+    <!-- Day selector -->
+    <div class="day-grid">
+      <div class="day-pill active" onclick="selectDay(0,this)">
+        <div class="dp-name">Seg</div>
+        <span class="dp-emoji">💪</span>
+        <div class="dp-type">Peito</div>
+      </div>
+      <div class="day-pill" onclick="selectDay(1,this)">
+        <div class="dp-name">Ter</div>
+        <span class="dp-emoji">🏋️</span>
+        <div class="dp-type">Costas</div>
+      </div>
+      <div class="day-pill" onclick="selectDay(2,this)">
+        <div class="dp-name">Qua</div>
+        <span class="dp-emoji">🔥</span>
+        <div class="dp-type">Cardio</div>
+      </div>
+      <div class="day-pill" onclick="selectDay(3,this)">
+        <div class="dp-name">Qui</div>
+        <span class="dp-emoji">🦵</span>
+        <div class="dp-type">Pernas</div>
+      </div>
+      <div class="day-pill" onclick="selectDay(4,this)">
+        <div class="dp-name">Sex</div>
+        <span class="dp-emoji">🎯</span>
+        <div class="dp-type">Ombros</div>
+      </div>
+      <div class="day-pill" onclick="selectDay(5,this)">
+        <div class="dp-name">Sáb</div>
+        <span class="dp-emoji">💥</span>
+        <div class="dp-type">Braços</div>
+      </div>
+      <div class="day-pill rest" onclick="selectDay(6,this)">
+        <div class="dp-name">Dom</div>
+        <span class="dp-emoji">😴</span>
+        <div class="dp-type" style="color:var(--text3)">Descanso</div>
+      </div>
+    </div>
+
+    <!-- Workout render target -->
+    <div id="workout-render"></div>
+  </div>
+
+  <!-- ────── TAB: ALIMENTAR ────── -->
+  <div id="tab-alimentar" class="tab-pane">
+
+    <!-- Seletor de Plano -->
+    <div class="plan-selector">
+      <button class="plan-btn pa active" id="btn-pa" onclick="selectPlan('A',this)">
+        <span class="pb-label">Plano A</span>
+        <span class="pb-kcal">2.510 kcal · 5 refeições</span>
+        <span class="pb-tag">Déficit moderado</span>
+      </button>
+      <div class="plan-divider"></div>
+      <button class="plan-btn pb-b" id="btn-pb" onclick="selectPlan('B',this)">
+        <span class="pb-label">Plano B</span>
+        <span class="pb-kcal">1.820 kcal · 4 refeições</span>
+        <span class="pb-tag">Déficit agressivo</span>
+      </button>
+    </div>
+
+    <!-- ══ PLANO A ══ -->
+    <div id="plan-a-content" class="plan-content active">
+      <div class="daily-macros">
+        <div class="dm dp"><div class="dm-label">Proteína</div><div class="dm-val">218g</div><div class="bar"><div class="bar-fill bp"></div></div></div>
+        <div class="dm dc"><div class="dm-label">Carboidrato</div><div class="dm-val">264g</div><div class="bar"><div class="bar-fill bc"></div></div></div>
+        <div class="dm dg"><div class="dm-label">Gordura</div><div class="dm-val">65g</div><div class="bar"><div class="bar-fill bg"></div></div></div>
+        <div class="dm dk"><div class="dm-label">Calorias</div><div class="dm-val">2.510</div><div class="bar"><div class="bar-fill bk"></div></div></div>
+      </div>
+      <div class="tl">
+        <div class="tl-row">
+          <div class="tl-time">07h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--yellow)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">☀️ Café da manhã</div>
+            <div class="meal-foods">3 ovos mexidos · 70g aveia com leite desnatado · 1 banana · café preto sem açúcar</div>
+            <div class="meal-note">Inicia o anabolismo matinal — proteína + carboidrato de liberação mista</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 30g</span><span class="mb mc">C: 72g</span><span class="mb mg">G: 16g</span><span class="kcal-txt">540 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">10h30</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🏃 Pré-treino — 1h30 antes</div>
+            <div class="meal-foods">140g frango grelhado · 150g batata doce · 1 maçã média</div>
+            <div class="meal-note">Digestão completa antes das 12h — energia sustentada sem refluxo</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 44g</span><span class="mb mc">C: 60g</span><span class="mb mg">G: 4g</span><span class="kcal-txt">460 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">12h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card training">
+            <div class="meal-title" style="color:var(--green)">⚡ Treino — 12h às 13h</div>
+            <div class="training-txt">Musculação (25-30 min) → Cardio (25-30 min) · Beba 600-800ml de água durante</div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">13h15</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🍽️ Almoço pós-treino — até 60 min após</div>
+            <div class="meal-foods">180g frango grelhado · 160g arroz integral · 80g feijão · salada livre · 10ml azeite</div>
+            <div class="meal-note">Janela anabólica: carboidrato + proteína para síntese proteica e reposição de glicogênio</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 58g</span><span class="mb mc">C: 72g</span><span class="mb mg">G: 14g</span><span class="kcal-txt">640 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">16h30</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--orange)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🥛 Lanche da tarde</div>
+            <div class="meal-foods">200g iogurte grego integral · 30g whey isolado · 100g morango · 15g granola low sugar</div>
+            <div class="meal-note">Proteína contínua + saciedade — previne catabolismo entre almoço e jantar</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 48g</span><span class="mb mc">C: 32g</span><span class="mb mg">G: 9g</span><span class="kcal-txt">400 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">20h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--blue)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🐟 Jantar</div>
+            <div class="meal-foods">160g salmão grelhado · 100g batata doce · brócolis + espinafre refogado no azeite</div>
+            <div class="meal-note">Omega-3 anti-inflamatório + proteína de lenta absorção para recuperação noturna</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 38g</span><span class="mb mc">C: 28g</span><span class="mb mg">G: 22g</span><span class="kcal-txt">470 kcal</span></div>
+          </div></div>
+        </div>
+      </div>
+    </div><!-- /plan-a -->
+
+    <!-- ══ PLANO B ══ -->
+    <div id="plan-b-content" class="plan-content">
+      <div class="plan-b-alert">
+        <span class="plan-b-alert-icon">⚡</span>
+        <div class="plan-b-alert-text">
+          <strong>Déficit agressivo — use com critério.</strong> Adaptado para queima de 1.200-1.300 kcal/dia. Proteína muito alta (182g) para proteger massa muscular. Use no máximo <strong>3-4 semanas seguidas</strong> e depois retorne ao Plano A por 1-2 semanas para resetar hormônios (leptina/grelina).
+        </div>
+      </div>
+      <div class="daily-macros">
+        <div class="dm dp"><div class="dm-label">Proteína</div><div class="dm-val">182g</div><div class="bar"><div class="bar-fill bp" style="width:65%"></div></div></div>
+        <div class="dm dc"><div class="dm-label">Carboidrato</div><div class="dm-val">148g</div><div class="bar"><div class="bar-fill bc" style="width:30%"></div></div></div>
+        <div class="dm dg"><div class="dm-label">Gordura</div><div class="dm-val">51g</div><div class="bar"><div class="bar-fill bg" style="width:22%"></div></div></div>
+        <div class="dm dk"><div class="dm-label">Calorias</div><div class="dm-val">1.820</div><div class="bar"><div class="bar-fill bk" style="background:var(--orange);width:72%"></div></div></div>
+      </div>
+      <div class="tl">
+        <div class="tl-row">
+          <div class="tl-time">07h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--yellow)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">☀️ Café da manhã</div>
+            <div class="meal-foods">4 claras + 1 ovo inteiro mexido · 50g aveia no leite desnatado · 1 banana pequena · café preto</div>
+            <div class="meal-note">Proteína alta de manhã reduz fome durante o dia — aveia sustenta até o pré-treino</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 29g</span><span class="mb mc">C: 54g</span><span class="mb mg">G: 8g</span><span class="kcal-txt">420 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">10h30</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🏃 Pré-treino — 1h30 antes</div>
+            <div class="meal-foods">160g frango grelhado · 120g batata doce · 100g cottage · pepino + tomate à vontade</div>
+            <div class="meal-note">Carboidrato moderado pré-treino — suficiente para performance sem exagero calórico</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 49g</span><span class="mb mc">C: 34g</span><span class="mb mg">G: 9g</span><span class="kcal-txt">405 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">12h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card training">
+            <div class="meal-title" style="color:var(--green)">⚡ Treino — 12h às 13h</div>
+            <div class="training-txt">Musculação (25-30 min) → Cardio (25-30 min) · Atenção: déficit alto = priorize intensidade moderada no cardio</div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">13h15</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🍽️ Almoço pós-treino — até 60 min após</div>
+            <div class="meal-foods">200g frango grelhado · 130g arroz integral · 80g feijão · salada livre · 8ml azeite</div>
+            <div class="meal-note">Maior refeição do dia — concentra carboidratos no momento de maior sensibilidade à insulina</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 57g</span><span class="mb mc">C: 45g</span><span class="mb mg">G: 13g</span><span class="kcal-txt">565 kcal</span></div>
+          </div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">20h00</div>
+          <div class="tl-conn"><div class="tl-dot" style="background:var(--blue)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-card">
+            <div class="meal-title">🐟 Jantar — proteína + gordura boa</div>
+            <div class="meal-foods">180g tilápia ou atum grelhado · 2 ovos cozidos · brócolis + abobrinha refogada · 8ml azeite</div>
+            <div class="meal-note">Zero carboidrato à noite no Plano B — proteína + gordura boa favorece lipólise durante o sono</div>
+            <div class="meal-macro-row"><span class="mb mp">P: 47g</span><span class="mb mc">C: 10g</span><span class="mb mg">G: 21g</span><span class="kcal-txt">430 kcal</span></div>
+          </div></div>
+        </div>
+      </div>
+    </div><!-- /plan-b -->
+
+  </div>
+
+  <!-- ────── TAB: PROTOCOLO ────── -->
+  <div id="tab-protocolo" class="tab-pane">
+
+    <!-- Resumo semanal -->
+    <div class="week-overview">
+      <div class="wo-row"><div class="wo-day">SEG</div><div class="wo-type">Peito</div><div class="wo-cardio">HIIT Esteira · 25 min</div><div class="wo-vol">13 séries</div></div>
+      <div class="wo-row"><div class="wo-day">TER</div><div class="wo-type">Costas</div><div class="wo-cardio">LISS Bike · 25 min</div><div class="wo-vol">13 séries</div></div>
+      <div class="wo-row"><div class="wo-day">QUA</div><div class="wo-type" style="color:var(--blue)">Cardio Total</div><div class="wo-cardio">HIIT + LISS · 55 min</div><div class="wo-vol">—</div></div>
+      <div class="wo-row"><div class="wo-day">QUI</div><div class="wo-type">Pernas</div><div class="wo-cardio">LISS inclinada · 15 min</div><div class="wo-vol">19 séries</div></div>
+      <div class="wo-row"><div class="wo-day">SEX</div><div class="wo-type">Ombros</div><div class="wo-cardio">HIIT Remo · 25 min</div><div class="wo-vol">14 séries</div></div>
+      <div class="wo-row"><div class="wo-day">SÁB</div><div class="wo-type">Braços (Supersets)</div><div class="wo-cardio">Pular corda + esteira · 25 min</div><div class="wo-vol">18 séries</div></div>
+      <div class="wo-row"><div class="wo-day">DOM</div><div class="wo-type" style="color:var(--text3)">Descanso ativo</div><div class="wo-cardio" style="color:var(--text3)">Mobilidade + caminhada opcional</div><div class="wo-vol">—</div></div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-title">📊 Projeção 12 semanas — Recomposição corporal</div>
+      <div class="phase-grid">
+        <div class="phase-item">
+          <div class="phase-item-num">~3.5kg</div>
+          <div class="phase-item-label">Gordura a perder</div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-item-num">~1.5kg</div>
+          <div class="phase-item-label">Massa mantida/ganha</div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-item-num">590</div>
+          <div class="phase-item-label">Kcal déficit/dia</div>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <div class="proto-grid">
+
+      <div class="proto-card">
+        <div class="proto-title">🔥 Princípios do Treino</div>
+        <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>Pesos antes do cardio:</strong> glicogênio muscular disponível = força máxima + cardio queima gordura residual.</div></div>
+        <div class="proto-item"><div class="proto-dot orange"></div><div class="proto-txt"><strong>RPE 8-9/10:</strong> todas as séries próximas à falha — pesquisa confirma que esse range maximiza hipertrofia independente das reps.</div></div>
+        <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>Progressão semanal:</strong> adicione 2.5kg ou +1 rep a cada semana nos compostos principais.</div></div>
+        <div class="proto-item"><div class="proto-dot yellow"></div><div class="proto-txt"><strong>Tempo de descanso:</strong> 90-120s em isoladores, 2-3 min em compostos (Squat, Bench, Deadlift).</div></div>
+      </div>
+
+      <div class="proto-card">
+        <div class="proto-title">💡 Cardio — Estratégia</div>
+        <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>HIIT (3x/sem):</strong> 15-20 min pós-musculação. Sprint 30s a 90-95% FC max + recuperação 90s. 8-10 rounds.</div></div>
+        <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>LISS (2x/sem):</strong> zona 2, 65-70% FC max (~130-140bpm). Queima gordura sem elevar cortisol.</div></div>
+        <div class="proto-item"><div class="proto-dot orange"></div><div class="proto-txt"><strong>FC máxima estimada:</strong> 220 - 27 = <strong>193 bpm</strong> · Zona 2: 125-135 bpm · HIIT: 175+ bpm</div></div>
+        <div class="proto-item"><div class="proto-dot yellow"></div><div class="proto-txt"><strong>Evite cardio em excesso:</strong> mais de 4x HIIT/semana eleva cortisol e impede a preservação de massa.</div></div>
+      </div>
+
+      <div class="proto-card">
+        <div class="proto-title">🌙 Recuperação</div>
+        <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>Sono 7-9h:</strong> déficit de sono reduz em até 50% a síntese proteica durante a dieta. Prioridade absoluta.</div></div>
+        <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>Hidratação:</strong> mínimo 3-4L de água/dia, +500ml por hora de treino.</div></div>
+        <div class="proto-item"><div class="proto-dot yellow"></div><div class="proto-txt"><strong>Mobilidade:</strong> 10-15 min pós-treino ou domingo — previne lesões e acelera recuperação muscular.</div></div>
+        <div class="proto-item"><div class="proto-dot orange"></div><div class="proto-txt"><strong>Gestão de estresse:</strong> cortisol alto sabota a perda de gordura localizada. Meditação / respiração.</div></div>
+      </div>
+
+      <div class="proto-card">
+        <div class="proto-title">📏 Como monitorar progresso</div>
+        <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>Peso:</strong> sempre em jejum, mesma hora. Média da semana (ignora flutuação diária).</div></div>
+        <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>Medidas (quinzenal):</strong> cintura, quadril, peitoral, braço relaxado e contraído.</div></div>
+        <div class="proto-item"><div class="proto-dot orange"></div><div class="proto-txt"><strong>Fotos (mensal):</strong> mesma luz, mesmo ângulo. Mais confiável que a balança.</div></div>
+        <div class="proto-item"><div class="proto-dot yellow"></div><div class="proto-txt"><strong>Ajuste de macro:</strong> sem perder peso em 2 semanas = reduzir 150 kcal (preferir em carboidrato).</div></div>
+      </div>
+
+      <div class="proto-card full">
+        <div class="proto-title">💊 Suplementação Recomendada</div>
+        <table class="suppl">
+          <thead>
+            <tr><th>Suplemento</th><th>Dose</th><th>Horário</th><th>Função</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Whey Isolado</td><td>30g (1 scoop)</td><td>Lanche 16h30</td><td>Completar meta proteica diária — absorção rápida</td></tr>
+            <tr><td>Creatina Monohidratada</td><td>5g/dia</td><td>Pós-treino (13h)</td><td>+força, +volume celular, +recuperação — evidência A</td></tr>
+            <tr><td>Cafeína</td><td>200-400mg</td><td>30-45 min antes do treino</td><td>Melhora desempenho, queima calórica e foco</td></tr>
+            <tr><td>Omega-3 (EPA+DHA)</td><td>2-3g/dia</td><td>Jantar</td><td>Anti-inflamatório, saúde articular, melhora composição corporal</td></tr>
+            <tr><td>Vitamina D3 + K2</td><td>4.000 UI D3 + 100mcg K2</td><td>Café da manhã</td><td>Testosterona, imunidade, saúde óssea</td></tr>
+            <tr><td>Magnésio Glicinato</td><td>300-400mg</td><td>Antes de dormir</td><td>Qualidade do sono, relaxamento muscular, recuperação</td></tr>
+            <tr><td>Beta-Alanina</td><td>3.2g/dia</td><td>Pré-treino</td><td>Reduz fadiga em cardio intenso — formigueiro é normal</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="proto-card full">
+        <div class="proto-title">🥩 Estratégia Alimentar — Regras de Ouro</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>Proteína é inegociável:</strong> 218g/dia (2.66g/kg). Priorize frango, ovos, atum, salmão, iogurte grego.</div></div>
+          <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>Carbo ciclado:</strong> mais carbo em dias de treino pesado (pernas, costas), menos no domingo.</div></div>
+          <div class="proto-item"><div class="proto-dot orange"></div><div class="proto-txt"><strong>Gordura boa:</strong> azeite, salmão, gema, castanhas — essencial para testosterona e saúde hormonal.</div></div>
+          <div class="proto-item"><div class="proto-dot yellow"></div><div class="proto-txt"><strong>Fibra 30-40g/dia:</strong> aveia, feijão, brócolis, frutas — saúde intestinal + saciedade + longevidade.</div></div>
+          <div class="proto-item"><div class="proto-dot"></div><div class="proto-txt"><strong>Refeição de recarga (opcional):</strong> 1x/semana pode comer +400 kcal — ajuda hormônios leptina/grelina.</div></div>
+          <div class="proto-item"><div class="proto-dot blue"></div><div class="proto-txt"><strong>Tolerância ±10%:</strong> acertar as macros dentro de 10% já é excelente. Consistência > perfeição.</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /protocolo -->
+
+</div><!-- /main -->
+
+<!-- ═══ BOTTOM NAV (mobile) ═══ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-btn active" id="bn-treino" onclick="switchTab('treino',document.querySelectorAll('.tab-btn')[0]);syncBn(this)">
+    <span class="bn-icon">🏋️</span>
+    <span class="bn-label">Treino</span>
+  </button>
+  <button class="bn-btn" id="bn-alimentar" onclick="switchTab('alimentar',document.querySelectorAll('.tab-btn')[1]);syncBn(this)">
+    <span class="bn-icon">🍽️</span>
+    <span class="bn-label">Dieta</span>
+  </button>
+  <button class="bn-btn" id="bn-protocolo" onclick="switchTab('protocolo',document.querySelectorAll('.tab-btn')[2]);syncBn(this)">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">Protocolo</span>
+  </button>
+</nav>
+
+<script>
+// ═══════ PLAN SELECTOR ═══════
+function selectPlan(plan, btn) {
+  document.querySelectorAll('.plan-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.plan-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('plan-' + plan.toLowerCase() + '-content').classList.add('active');
+}
+
+// ═══════ CARDIO STATE ═══════
+const selCardio = {0:0,1:0,2:0,3:0,4:0,5:0};
+
+// ═══════ WORKOUT DATA ═══════
+const workouts = [
+  // ── SEG: Peito ──────────────────────────────────────────────────
+  {
+    day:'SEG', color:'var(--green)',
+    title:'Peito + HIIT 27 min',
+    sub:'28 min musculação · 27 min cardio',
+    tags:[
+      {label:'💪 Musculação 28min',cls:'green'},
+      {label:'🔥 HIIT 27min',cls:'blue'},
+      {label:'🎯 Volume: 13 séries',cls:'orange'}
+    ],
+    muscSection:'Musculação — Peitoral',
+    exercises:[
+      {name:'Supino Reto c/ Barra',sets:'4 × 6-8 reps',tip:'Principal força — carga máxima controlada'},
+      {name:'Supino Inclinado Haltere',sets:'3 × 10-12 reps',tip:'30-45° — peitoral superior'},
+      {name:'Crucifixo Cabos',sets:'3 × 12-15 reps',tip:'Amplitude máxima — estiramento peitoral'},
+      {name:'Peck Deck Máquina',sets:'3 × 12-15 reps',tip:'Isolamento + queima final — squeeze no topo'}
+    ],
+    cardio:{options:[
+      {
+        label:'🏃 Esteira',type:'HIIT',
+        title:'🏃 HIIT Esteira — 27 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min a 6 km/h, inclinação 1%'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s sprint (15-18 km/h) + 90s caminhada (6 km/h)'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min caminhada lenta com declinação gradual'},
+          {n:4,text:'<strong>FC sprint:</strong> 175-185 bpm · <strong>Recuperação:</strong> 120-130 bpm'}
+        ]
+      },
+      {
+        label:'🚴 Bike',type:'HIIT',
+        title:'🚴 HIIT Bike Ergométrica — 27 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min cadência leve, resistência baixa'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s pedalada máxima (resistência alta) + 90s pedalada suave'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min cadência lenta, resistência mínima'},
+          {n:4,text:'<strong>Vantagem:</strong> zero impacto articular — ideal pós-supino pesado'}
+        ]
+      },
+      {
+        label:'🔄 Elíptico',type:'HIIT',
+        title:'🔄 HIIT Elíptico — 27 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min ritmo confortável, resistência 5'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s resistência máxima (nível 14-16) + 90s suave (nível 5)'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min ritmo lento decrescente'},
+          {n:4,text:'<strong>Diferencial:</strong> ativa membros superiores e inferiores simultaneamente'}
+        ]
+      },
+      {
+        label:'🚣 Remo',type:'HIIT',
+        title:'🚣 HIIT Remo Ergométrico — 27 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min ritmo lento e técnico'},
+          {n:2,text:'<strong>10 rounds:</strong> 20s remo potência máxima + 40s recuperação lenta'},
+          {n:3,text:'<strong>Cool down:</strong> 6 min remo suave — FC abaixo de 120 bpm'},
+          {n:4,text:'<strong>Remo ativa 86% dos músculos</strong> — maior gasto calórico por minuto'}
+        ]
+      },
+      {
+        label:'🪜 Escada',type:'HIIT',
+        title:'🪜 HIIT Step Machine — 27 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min ritmo lento, nível 4-5'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s ritmo máximo (nível 14-16) + 90s recuperação lenta (nível 4)'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min descendo o nível gradualmente'},
+          {n:4,text:'<strong>Ativa glúteo e posterior 2× mais</strong> que esteira plana — recomposição ideal'}
+        ]
+      }
+    ]}
+  },
+  // ── TER: Costas ─────────────────────────────────────────────────
+  {
+    day:'TER', color:'var(--blue)',
+    title:'Costas + LISS 25 min',
+    sub:'28 min musculação · 25 min cardio',
+    tags:[
+      {label:'🏋️ Musculação 28min',cls:'green'},
+      {label:'🟢 LISS 25min',cls:'blue'},
+      {label:'🎯 Volume: 13 séries',cls:'orange'}
+    ],
+    muscSection:'Musculação — Dorsal',
+    exercises:[
+      {name:'Barra Fixa Lastrada',sets:'4 × 6-8 reps',tip:'Lastre ou banda de assistência — ROM completo'},
+      {name:'Remada Curvada c/ Barra',sets:'4 × 8-10 reps',tip:'Tronco 45° — cotovelo rente ao corpo'},
+      {name:'Pulldown Pegada Larga',sets:'3 × 10-12 reps',tip:'Puxa até o queixo — ativa o latíssimo'},
+      {name:'Remada Cavalinho',sets:'3 × 10-12 reps',tip:'Trapézio médio e romboides — retração escapular'}
+    ],
+    cardio:{options:[
+      {
+        label:'🚴 Bike',type:'LISS',
+        title:'🚴 LISS Bike Ergométrica — 25 min',
+        steps:[
+          {n:1,text:'<strong>Zona 2:</strong> 65-70% FC máxima — deve conseguir manter conversa'},
+          {n:2,text:'<strong>FC alvo:</strong> 125-135 bpm · Cadência: 80-90 RPM com resistência moderada'},
+          {n:3,text:'<strong>Duração constante:</strong> sem variação de ritmo — pace uniforme do início ao fim'},
+          {n:4,text:'<strong>Por que zona 2:</strong> oxida gordura diretamente sem elevar cortisol'}
+        ]
+      },
+      {
+        label:'🏃 Esteira',type:'LISS',
+        title:'🏃 LISS Esteira Inclinada — 25 min',
+        steps:[
+          {n:1,text:'<strong>Configuração:</strong> inclinação 8-10% · velocidade 5.5-6 km/h'},
+          {n:2,text:'<strong>FC alvo:</strong> 125-135 bpm — ajuste a inclinação para manter a zona'},
+          {n:3,text:'<strong>Não segure no corrimão</strong> — obriga o core e glúteos a trabalharem'},
+          {n:4,text:'<strong>Caloria extra:</strong> inclinação aumenta gasto ~30% vs caminhada plana'}
+        ]
+      },
+      {
+        label:'🔄 Elíptico',type:'LISS',
+        title:'🔄 LISS Elíptico — 25 min',
+        steps:[
+          {n:1,text:'<strong>Resistência:</strong> nível 6-8 · ritmo moderado e constante'},
+          {n:2,text:'<strong>FC alvo:</strong> 125-135 bpm · mantenha postura ereta sem apoiar os braços'},
+          {n:3,text:'<strong>Cadência:</strong> 60-70 passos/min — foco em empurrar os pedais'},
+          {n:4,text:'<strong>Vantagem:</strong> zero impacto — perfeito pós-treino de costas intenso'}
+        ]
+      },
+      {
+        label:'🪜 Escada',type:'LISS',
+        title:'🪜 Step Machine / Escada — 25 min',
+        steps:[
+          {n:1,text:'<strong>Ritmo constante:</strong> 50-60 degraus/min · não apoie os braços no corrimão'},
+          {n:2,text:'<strong>FC alvo:</strong> 125-140 bpm — ativa glúteo e posterior da coxa'},
+          {n:3,text:'<strong>Postura:</strong> tronco levemente inclinado para frente — ativa core'},
+          {n:4,text:'<strong>Bônus:</strong> ativa glúteo 2x mais que esteira plana — recomposição ideal'}
+        ]
+      }
+    ]}
+  },
+  // ── QUA: Cardio Total ────────────────────────────────────────────
+  {
+    day:'QUA', color:'var(--blue)',
+    title:'Cardio Total',
+    sub:'55 min — somente cardio · recuperação ativa',
+    tags:[
+      {label:'🔥 HIIT',cls:'orange'},
+      {label:'🟢 LISS',cls:'blue'},
+      {label:'🧘 Mobilidade',cls:'purple'}
+    ],
+    cardioOnly:true,
+    cardioOpts:[
+      {
+        label:'🔄 Mix (padrão)',
+        blocks:[
+          {num:'01',title:'Aquecimento — Esteira',detail:'5 min · 6 km/h · inclinação 0%',zone:'liss',zoneLabel:'Zona 1'},
+          {num:'02',title:'HIIT — Elíptico',detail:'15 min · 8× (30s máximo + 90s suave)',zone:'hiit',zoneLabel:'HIIT'},
+          {num:'03',title:'LISS — Esteira Inclinada',detail:'25 min · inclinação 12% · 5.5 km/h',zone:'liss',zoneLabel:'Zona 2'},
+          {num:'04',title:'Mobilidade + Alongamento',detail:'10 min — quadril, ombros, posterior da coxa',zone:'liss',zoneLabel:'Ativo'}
+        ]
+      },
+      {
+        label:'🏃 Só Esteira',
+        blocks:[
+          {num:'01',title:'Aquecimento — Esteira',detail:'5 min · 6 km/h · plana',zone:'liss',zoneLabel:'Zona 1'},
+          {num:'02',title:'HIIT — Esteira Sprint',detail:'20 min · 8× (30s sprint 16-18km/h + 90s caminhada)',zone:'hiit',zoneLabel:'HIIT'},
+          {num:'03',title:'LISS — Esteira Inclinada',detail:'20 min · inclinação 10% · 5.5 km/h',zone:'liss',zoneLabel:'Zona 2'},
+          {num:'04',title:'Cool Down + Alongamento',detail:'10 min · 4 km/h plana + alongamento geral',zone:'liss',zoneLabel:'Ativo'}
+        ]
+      },
+      {
+        label:'🚴 Só Bike',
+        blocks:[
+          {num:'01',title:'Aquecimento — Bike',detail:'5 min · resistência leve · cadência livre',zone:'liss',zoneLabel:'Zona 1'},
+          {num:'02',title:'HIIT — Bike Sprint',detail:'20 min · 10× (20s esforço máximo + 40s suave)',zone:'hiit',zoneLabel:'HIIT'},
+          {num:'03',title:'LISS — Bike Zona 2',detail:'20 min · resistência moderada · FC 125-135 bpm',zone:'liss',zoneLabel:'Zona 2'},
+          {num:'04',title:'Cool Down + Mobilidade',detail:'10 min · pedalada leve + alongamento sentado',zone:'liss',zoneLabel:'Ativo'}
+        ]
+      },
+      {
+        label:'💪 Sem equip.',
+        blocks:[
+          {num:'01',title:'Aquecimento — Jumping Jacks',detail:'5 min contínuo · ritmo moderado',zone:'liss',zoneLabel:'Zona 1'},
+          {num:'02',title:'Circuito HIIT Bodyweight',detail:'20 min · 5× (40s burpee + 40s mountain climber + 40s squat jump + 60s descanso)',zone:'hiit',zoneLabel:'HIIT'},
+          {num:'03',title:'Corrida Estacionária / Caminhada',detail:'20 min · ritmo confortável no lugar ou na rua',zone:'liss',zoneLabel:'Zona 2'},
+          {num:'04',title:'Alongamento Global',detail:'10 min — todos os grupos musculares',zone:'liss',zoneLabel:'Ativo'}
+        ]
+      },
+      {
+        label:'🪜 Escada',
+        blocks:[
+          {num:'01',title:'Aquecimento — Step Machine',detail:'5 min · ritmo lento · nível 4',zone:'liss',zoneLabel:'Zona 1'},
+          {num:'02',title:'HIIT — Escada',detail:'20 min · 8× (30s nível máximo + 90s nível 4)',zone:'hiit',zoneLabel:'HIIT'},
+          {num:'03',title:'LISS — Escada Contínua',detail:'20 min · nível 7-8 constante · FC 125-135 bpm',zone:'liss',zoneLabel:'Zona 2'},
+          {num:'04',title:'Mobilidade + Alongamento',detail:'10 min — panturrilha, quadril, posterior da coxa',zone:'liss',zoneLabel:'Ativo'}
+        ]
+      }
+    ]
+  },
+  // ── QUI: Pernas ─────────────────────────────────────────────────
+  {
+    day:'QUI', color:'var(--purple)',
+    title:'Pernas Completo + Cardio',
+    sub:'40 min musculação · 15 min cardio',
+    tags:[
+      {label:'🦵 Musculação 40min',cls:'green'},
+      {label:'🟢 LISS 15min',cls:'blue'},
+      {label:'🎯 Volume: 19 séries',cls:'orange'}
+    ],
+    muscSection:'Musculação — Membros Inferiores',
+    exercises:[
+      {name:'Agachamento Livre',sets:'4 × 6-8 reps',tip:'Principal composto — profundidade abaixo da paralela'},
+      {name:'Romanian Deadlift',sets:'4 × 8-10 reps',tip:'Posterior da coxa — quadril atrás, coluna neutra'},
+      {name:'Leg Press 45°',sets:'4 × 10-12 reps',tip:'Pés no meio do step — quad dominante'},
+      {name:'Cadeira Extensora',sets:'3 × 12-15 reps',tip:'Isolamento de quadríceps — pause 1s no topo'},
+      {name:'Mesa Flexora',sets:'2 × 12-15 reps',tip:'Isolamento posterior — contração completa'},
+      {name:'Panturrilha em Pé',sets:'3 × 15-20 reps',tip:'ROM completo — pause de 2s no estiramento'}
+    ],
+    cardio:{options:[
+      {
+        label:'🏃 Esteira',type:'LISS',
+        title:'🏃 LISS Esteira Inclinada — 15 min',
+        steps:[
+          {n:1,text:'<strong>Inclinação 12% · Velocidade 5.5 km/h</strong> — caminhada intensa sem travar joelhos'},
+          {n:2,text:'<strong>Por que reduzido na perna:</strong> preserva glicogênio e evita sobrecarregar articulação'},
+          {n:3,text:'<strong>FC alvo:</strong> 120-130 bpm · zona 2 baixa — queima gordura pós-treino'},
+          {n:4,text:'<strong>Não segure no corrimão</strong> — força o core e aumenta gasto calórico'}
+        ]
+      },
+      {
+        label:'🚴 Bike',type:'LISS',
+        title:'🚴 LISS Bike Ergométrica — 15 min',
+        steps:[
+          {n:1,text:'<strong>Resistência leve-moderada:</strong> nível 5-7 · cadência 70-80 RPM'},
+          {n:2,text:'<strong>FC alvo:</strong> 115-130 bpm — recuperação ativa pós-perna'},
+          {n:3,text:'<strong>Zero impacto nos joelhos</strong> — ideal quando o agachamento foi pesado'},
+          {n:4,text:'<strong>Mantenha pedal circular:</strong> não pise, empurre e puxe o pedal'}
+        ]
+      },
+      {
+        label:'🔄 Elíptico',type:'LISS',
+        title:'🔄 LISS Elíptico — 15 min',
+        steps:[
+          {n:1,text:'<strong>Resistência leve:</strong> nível 4-6 · ritmo constante e confortável'},
+          {n:2,text:'<strong>FC alvo:</strong> 115-130 bpm — zona de recuperação ativa'},
+          {n:3,text:'<strong>Use os braços:</strong> empurre/puxe as alavancas — aumenta gasto calórico'},
+          {n:4,text:'<strong>Articulações poupadas:</strong> melhor opção se joelhos estiverem sensíveis pós-perna'}
+        ]
+      },
+      {
+        label:'🚶 Caminhada',type:'LISS',
+        title:'🚶 Caminhada Externa — 15 min',
+        steps:[
+          {n:1,text:'<strong>Ritmo animado:</strong> 5.5-6 km/h em rua levemente inclinada ou plana'},
+          {n:2,text:'<strong>Postura:</strong> ombros abertos, core ativado, passada natural'},
+          {n:3,text:'<strong>FC alvo:</strong> 110-125 bpm — baixa intensidade estratégica pós-perna'},
+          {n:4,text:'<strong>Bônus:</strong> luz solar + mobilidade leve — recuperação ativa completa'}
+        ]
+      },
+      {
+        label:'🪜 Escada',type:'LISS',
+        title:'🪜 LISS Step Machine — 15 min',
+        steps:[
+          {n:1,text:'<strong>Nível 6-8 constante</strong> · ritmo uniforme do início ao fim'},
+          {n:2,text:'<strong>FC alvo:</strong> 115-130 bpm — zona 2 baixa, ideal pós-perna'},
+          {n:3,text:'<strong>Não apoie os braços</strong> no corrimão — força glúteo e core'},
+          {n:4,text:'<strong>Ativa posterior e glúteo</strong> em cadeia fechada — complementa o RDL do dia'}
+        ]
+      }
+    ]}
+  },
+  // ── SEX: Ombros ─────────────────────────────────────────────────
+  {
+    day:'SEX', color:'var(--orange)',
+    title:'Ombros + HIIT 25 min',
+    sub:'28 min musculação · 25 min cardio',
+    tags:[
+      {label:'🎯 Musculação 28min',cls:'green'},
+      {label:'🔥 HIIT 25min',cls:'blue'},
+      {label:'🎯 Volume: 14 séries',cls:'orange'}
+    ],
+    muscSection:'Musculação — Deltóides',
+    exercises:[
+      {name:'Desenvolvimento c/ Halteres',sets:'4 × 8-10 reps',tip:'Sentado ou em pé — cotovelo em 90° na saída'},
+      {name:'Elevação Lateral',sets:'4 × 12-15 reps',tip:'Cotovelo ligeiramente fletido · 2s de descida controlada'},
+      {name:'Remada Alta c/ Barra',sets:'3 × 10-12 reps',tip:'Deltóide medial + trapézio — pegada um pouco larga'},
+      {name:'Crucifixo Inverso no Cabo',sets:'3 × 12-15 reps',tip:'Deltóide posterior — essencial para postura e equilíbrio'}
+    ],
+    cardio:{options:[
+      {
+        label:'🚴 Bike',type:'HIIT',
+        title:'🚴 HIIT Bike Ergométrica — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min pedalada suave, resistência baixa'},
+          {n:2,text:'<strong>10 rounds:</strong> 20s resistência máxima (potência total) + 40s suave'},
+          {n:3,text:'<strong>Cool down:</strong> 7 min pedalada leve — FC abaixo de 120 bpm'},
+          {n:4,text:'<strong>Sem impacto nos ombros</strong> — perfeito após treino de deltóide'}
+        ]
+      },
+      {
+        label:'🔄 Elíptico',type:'HIIT',
+        title:'🔄 HIIT Elíptico — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min nível 5, ritmo confortável'},
+          {n:2,text:'<strong>10 rounds:</strong> 20s nível máximo (14-16) + 40s recuperação nível 4'},
+          {n:3,text:'<strong>Cool down:</strong> 7 min ritmo decrescente até parar'},
+          {n:4,text:'<strong>Atenção:</strong> não force os braços — ombros já estão fatigados'}
+        ]
+      },
+      {
+        label:'🏃 Esteira',type:'HIIT',
+        title:'🏃 HIIT Esteira — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min a 6 km/h, inclinação 1%'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s sprint (14-16 km/h) + 90s caminhada (6 km/h)'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min caminhada suave'},
+          {n:4,text:'<strong>FC sprint:</strong> 170-183 bpm · <strong>Recuperação:</strong> 120-130 bpm'}
+        ]
+      },
+      {
+        label:'🚣 Remo',type:'HIIT',
+        title:'🚣 HIIT Remo Ergométrico — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min ritmo lento com técnica correta'},
+          {n:2,text:'<strong>10 rounds:</strong> 20s remo máxima potência + 40s recuperação lenta'},
+          {n:3,text:'<strong>Cool down:</strong> 7 min remo suave e técnico'},
+          {n:4,text:'<strong>Atenção:</strong> use a tração de pernas — não sobrecarregue os deltóides'}
+        ]
+      },
+      {
+        label:'🪜 Escada',type:'HIIT',
+        title:'🪜 HIIT Step Machine — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min nível 4, ritmo constante'},
+          {n:2,text:'<strong>10 rounds:</strong> 20s nível máximo (14-16) + 40s nível 4 de recuperação'},
+          {n:3,text:'<strong>Cool down:</strong> 7 min descendo o nível gradualmente'},
+          {n:4,text:'<strong>Zero impacto nos ombros</strong> — perfeito após treino de deltóide pesado'}
+        ]
+      }
+    ]}
+  },
+  // ── SÁB: Braços ─────────────────────────────────────────────────
+  {
+    day:'SÁB', color:'var(--yellow)',
+    title:'Braços — Supersets',
+    sub:'30 min musculação · 25 min cardio',
+    tags:[
+      {label:'💪 Bíceps 15min',cls:'green'},
+      {label:'💥 Tríceps 15min',cls:'orange'},
+      {label:'⚡ Supersets',cls:'purple'},
+      {label:'🏃 Cardio 25min',cls:'blue'}
+    ],
+    muscSection:'Musculação — Bíceps ↔ Tríceps (Supersets)',
+    exercises:[
+      {name:'(A1) Rosca Direta c/ Barra',sets:'4 × 8-10 reps',tip:'Superset com A2 · sem balançar o tronco'},
+      {name:'(A2) Tríceps Testa EZ Bar',sets:'4 × 10-12 reps',tip:'Superset com A1 · cotovelo fixo, não abre'},
+      {name:'(B1) Rosca Inclinada Haltere',sets:'3 × 10-12 reps',tip:'Superset com B2 · longa cabeça do bíceps'},
+      {name:'(B2) Tríceps Corda',sets:'3 × 12-15 reps',tip:'Superset com B1 · abrir a corda no final'},
+      {name:'(C1) Rosca Concentrada',sets:'3 × 12 reps',tip:'Superset com C2 · pico do bíceps'},
+      {name:'(C2) Fundos no Banco',sets:'3 × até falha',tip:'Superset com C1 · cabeça longa do tríceps'}
+    ],
+    cardio:{options:[
+      {
+        label:'🚴 Bike',type:'HIIT',
+        title:'🚴 HIIT Bike Ergométrica — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min suave, resistência leve'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s pedalada máxima + 90s suave — sem parar'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min pedalada leve até FC abaixo de 115 bpm'},
+          {n:4,text:'<strong>Braços poupados:</strong> mantém gasto calórico sem fatigar bíceps/tríceps'}
+        ]
+      },
+      {
+        label:'🏃 Esteira',type:'HIIT',
+        title:'🏃 HIIT Esteira — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min a 6 km/h plana'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s sprint (14-16 km/h) + 90s caminhada (6 km/h)'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min caminhada 5 km/h'},
+          {n:4,text:'<strong>FC sprint:</strong> 170-183 bpm · <strong>Recuperação:</strong> 120-130 bpm'}
+        ]
+      },
+      {
+        label:'🔄 Elíptico',type:'HIIT',
+        title:'🔄 HIIT Elíptico — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min nível 4, sem apertar a alavanca dos braços'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s nível máximo (13-15) + 90s nível 4'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min decrescendo até parar naturalmente'},
+          {n:4,text:'<strong>Dica:</strong> deixe os braços relaxados — foco nas pernas pós-treino de braço'}
+        ]
+      },
+      {
+        label:'🪢 Corda',type:'HIIT',
+        title:'🪢 Pular Corda — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 2 min pular devagar, ritmo constante'},
+          {n:2,text:'<strong>6 rounds:</strong> 2 min pular corda (ritmo vivo) + 1 min descanso ativo'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min caminhada + 2 min alongamento de panturrilha'},
+          {n:4,text:'<strong>~400 kcal/h</strong> — maior gasto calórico por minuto entre as opções'}
+        ]
+      },
+      {
+        label:'🪜 Escada',type:'HIIT',
+        title:'🪜 HIIT Step Machine — 25 min',
+        steps:[
+          {n:1,text:'<strong>Aquecimento:</strong> 3 min nível 4, ritmo cadenciado'},
+          {n:2,text:'<strong>8 rounds:</strong> 30s nível máximo (14-16) + 90s nível 4 de recuperação'},
+          {n:3,text:'<strong>Cool down:</strong> 5 min descendo o nível até parar'},
+          {n:4,text:'<strong>Braços livres</strong> — não apoie no corrimão, preserva bíceps e tríceps já fatigados'}
+        ]
+      }
+    ]}
+  },
+  { rest:true }
+];
+
+// ═══════ RENDER FUNCTIONS ═══════
+function renderWorkout(idx) {
+  const w = workouts[idx];
+  const el = document.getElementById('workout-render');
+
+  if (w.rest) {
+    el.innerHTML = `
+      <div class="rest-card">
+        <div class="rest-icon">😴</div>
+        <div class="rest-title">Descanso Ativo</div>
+        <div class="rest-sub">O músculo cresce no descanso, não no treino. Domingo é parte do programa.</div>
+        <div class="rest-tips">
+          <div class="rest-tip">🧘 15-20 min de mobilidade articular e foam rolling</div>
+          <div class="rest-tip">🚶 Caminhada leve de 20-30 min (sem elevar FC)</div>
+          <div class="rest-tip">😴 Priorize 8h de sono — pico de GH acontece à noite</div>
+          <div class="rest-tip">💧 Hidratação normal + alimentação sem déficit hoje</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (w.cardioOnly) {
+    const optSel = selCardio[idx] || 0;
+    const blocks = w.cardioOpts[optSel].blocks.map(b => `
+      <div class="co-block">
+        <div class="co-num">${b.num}</div>
+        <div class="co-info">
+          <div class="co-title">${b.title}</div>
+          <div class="co-detail">${b.detail}</div>
+          <span class="co-zone ${b.zone}">${b.zoneLabel}</span>
+        </div>
+      </div>`).join('');
+    const optBtns = w.cardioOpts.map((o,i) =>
+      `<button class="co-opt${i===optSel?' sel':''}" onclick="selectCardioOpt(${idx},${i})">${o.label}</button>`
+    ).join('');
+    const tags = w.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('');
+    el.innerHTML = `
+      <div class="co-card">
+        <div class="co-head">
+          <div class="co-badge">🔥</div>
+          <div>
+            <div class="wk-title">${w.title}</div>
+            <div class="wk-sub">${w.sub}</div>
+          </div>
+        </div>
+        <div class="wk-tags">${tags}</div>
+        <div class="co-opts-row">
+          <span class="co-opts-label">Escolher circuito:</span>
+          ${optBtns}
+        </div>
+        <div class="co-blocks">${blocks}</div>
+      </div>`;
+    return;
+  }
+
+  const optSel = selCardio[idx] || 0;
+  const cardioOpt = w.cardio.options[optSel];
+
+  const tags = w.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('');
+  const exs = w.exercises.map(e => `
+    <div class="ex">
+      <div class="ex-name">${e.name}</div>
+      <div class="ex-sets">${e.sets}</div>
+      <div class="ex-tip">${e.tip}</div>
+    </div>`).join('');
+
+  const optBtns = w.cardio.options.map((o,i) =>
+    `<button class="co-opt${i===optSel?' sel':''}" onclick="selectCardioOpt(${idx},${i})">${o.label}</button>`
+  ).join('');
+
+  const steps = cardioOpt.steps.map(s => `
+    <div class="cs">
+      <div class="cs-num">${s.n}</div>
+      <div class="cs-txt">${s.text}</div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div class="wk-card">
+      <div class="wk-head">
+        <div class="wk-badge" style="background:linear-gradient(135deg,${w.color},var(--blue))">${w.day}</div>
+        <div>
+          <div class="wk-title">${w.title}</div>
+          <div class="wk-sub">${w.sub}</div>
+        </div>
+      </div>
+      <div class="wk-tags">${tags}</div>
+      <div class="section-label">${w.muscSection}</div>
+      <div class="ex-grid">${exs}</div>
+      <div class="cardio-box">
+        <div class="cardio-opts-row">
+          <span class="cardio-opts-label">Cardio:</span>
+          ${optBtns}
+        </div>
+        <div class="cardio-body">
+          <div class="cardio-head">${cardioOpt.title}</div>
+          <div class="cardio-steps">${steps}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════ CARDIO OPTION SELECTION ═══════
+function selectCardioOpt(dayIdx, optIdx) {
+  selCardio[dayIdx] = optIdx;
+  renderWorkout(dayIdx);
+}
+
+// ═══════ DAY SELECTION ═══════
+function selectDay(idx, el) {
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderWorkout(idx);
+}
+
+// ═══════ TAB SWITCHING ═══════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  // sync bottom nav
+  document.querySelectorAll('.bn-btn').forEach(b => b.classList.remove('active'));
+  const bnMap = {treino:'bn-treino', alimentar:'bn-alimentar', protocolo:'bn-protocolo'};
+  const bnEl = document.getElementById(bnMap[name]);
+  if(bnEl) bnEl.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function syncBn(btn) {
+  document.querySelectorAll('.bn-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══════ INIT ═══════
+renderWorkout(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotações Químicos — Meridional TCS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Design Tokens ───────────────────────────────────────── */
+:root {
+  --bg:          #0d1117;
+  --bg2:         #111820;
+  --bg3:         #161d27;
+  --surface:     rgba(255,255,255,0.04);
+  --surface2:    rgba(255,255,255,0.07);
+  --border:      rgba(255,255,255,0.08);
+  --border2:     rgba(255,255,255,0.13);
+  --green:       #00e676;
+  --green2:      #00c853;
+  --green-dim:   rgba(0,230,118,0.12);
+  --green-glow:  rgba(0,230,118,0.35);
+  --red:         #ff4757;
+  --red-dim:     rgba(255,71,87,0.12);
+  --amber:       #ffc107;
+  --amber-dim:   rgba(255,193,7,0.12);
+  --blue:        #2979ff;
+  --cyan:        #00e5ff;
+  --purple:      #d500f9;
+  --text:        #e8ecf0;
+  --text2:       #8b9ab0;
+  --text3:       #5a6a7e;
+  --font-mono:   'Fira Code', monospace;
+  --font-body:   'Fira Sans', sans-serif;
+  --radius:      12px;
+  --radius-sm:   8px;
+  --shadow:      0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 32px rgba(0,230,118,0.2);
+}
+
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  background:
+    radial-gradient(ellipse 70% 65% at 100% 0%, rgba(0,255,80,0.42) 0%, rgba(0,230,100,0.10) 45%, transparent 68%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+}
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input  { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── App Shell ───────────────────────────────────────────── */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════════ */
+.sidebar {
+  width: 225px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(13,17,23,0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  z-index: 10;
+  gap: 0;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  color: #0d1117;
+  font-family: var(--font-mono);
+  box-shadow: 0 0 16px var(--green-glow);
+  flex-shrink: 0;
+}
+.logo-text { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.logo-sub  { font-size: 10px; color: var(--text3); font-weight: 400; }
+
+.sidebar-search {
+  padding: 0 12px 12px;
+}
+.search-wrap {
+  position: relative;
+  display: flex; align-items: center;
+}
+.search-wrap svg {
+  position: absolute; left: 10px;
+  color: var(--text3); pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px 7px 32px;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--green); }
+
+.nav-section {
+  padding: 0 12px;
+  flex: 1;
+}
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--text3);
+  text-transform: uppercase;
+  padding: 8px 6px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  margin-bottom: 2px;
+}
+.nav-item svg { flex-shrink: 0; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active {
+  background: var(--green);
+  color: #0d1117;
+  font-weight: 700;
+}
+.nav-item.active svg { color: #0d1117; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+}
+.nav-item.active .nav-badge {
+  background: rgba(0,0,0,0.25);
+  color: #0d1117;
+}
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 12px;
+}
+
+.sidebar-footer {
+  padding: 0 12px;
+}
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .15s;
+}
+.user-card:hover { background: var(--surface); }
+.user-avatar {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.user-name  { font-size: 12px; font-weight: 600; color: var(--text); }
+.user-role  { font-size: 10px; color: var(--text3); }
+
+/* ════════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ══════════════════════════════════════════════════════════ */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(13,17,23,0.5);
+  backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 9;
+  flex-shrink: 0;
+}
+.breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px;
+}
+.breadcrumb-sep { color: var(--text3); }
+.breadcrumb-root { color: var(--text3); }
+.breadcrumb-cur  { color: var(--text); font-weight: 600; }
+.topbar-right {
+  display: flex; align-items: center; gap: 12px;
+}
+.topbar-date {
+  font-size: 12px; color: var(--text3);
+  font-family: var(--font-mono);
+}
+.topbar-btn {
+  width: 32px; height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2);
+  transition: background .15s, color .15s;
+  position: relative;
+}
+.topbar-btn:hover { background: var(--surface2); color: var(--text); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+/* ── Content area ── */
+.content {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* ── Filter Bar ── */
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.filter-label { font-size: 12px; color: var(--text3); font-weight: 500; }
+.filter-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.filter-chip:hover { border-color: var(--green); color: var(--green); }
+.filter-chip.active {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
+.filter-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text2);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-select:focus { border-color: var(--green); }
+
+/* ── KPI Row ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.kpi-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.kpi-card.kpi-green::before  { background: var(--green); }
+.kpi-card.kpi-red::before    { background: var(--red); }
+.kpi-card.kpi-amber::before  { background: var(--amber); }
+.kpi-card.kpi-blue::before   { background: var(--blue); }
+.kpi-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.kpi-icon.green { background: var(--green-dim); color: var(--green); }
+.kpi-icon.red   { background: var(--red-dim);   color: var(--red); }
+.kpi-icon.amber { background: var(--amber-dim); color: var(--amber); }
+.kpi-icon.blue  { background: rgba(41,121,255,.14); color: var(--blue); }
+.kpi-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.kpi-value {
+  font-size: 22px; font-weight: 700;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1.2;
+}
+.kpi-sub {
+  font-size: 11px; color: var(--text3); margin-top: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+.badge-up   { color: var(--red);   font-weight: 600; font-size: 11px; font-family: var(--font-mono); }
+.badge-down { color: var(--green); font-weight: 600; font-size: 11px; font-family: var(--font-mono); }
+
+/* ── Middle grid ── */
+.mid-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 16px;
+}
+
+/* Overview Card (donut + stats) */
+.overview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.card-meta  { font-size: 11px; color: var(--text3); }
+.card-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 20px;
+  font-family: var(--font-mono);
+}
+.card-badge.green { background: var(--green-dim); color: var(--green); }
+.card-badge.red   { background: var(--red-dim);   color: var(--red); }
+
+.overview-body {
+  display: flex; gap: 20px; align-items: center;
+}
+.donut-wrap {
+  position: relative;
+  width: 160px; height: 160px;
+  flex-shrink: 0;
+}
+.donut-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.donut-center-val {
+  font-size: 22px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.donut-center-lbl { font-size: 10px; color: var(--text3); font-weight: 500; }
+
+.group-legend {
+  display: flex; flex-direction: column; gap: 10px; flex: 1;
+}
+.legend-row {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+}
+.legend-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+}
+.legend-name  { font-size: 12px; color: var(--text2); flex: 1; line-height: 1; }
+.legend-value {
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.legend-pct { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+/* Right column (mini stats + area chart) */
+.right-col {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.mini-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.mini-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.mini-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.mini-val {
+  font-size: 18px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.mini-sub { font-size: 10px; margin-top: 4px; }
+
+.area-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  flex: 1;
+}
+.area-card canvas { height: 140px !important; }
+
+/* ── Chart Card (full-width line chart) ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.chart-card canvas { height: 200px !important; }
+
+/* ── Table Card ── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.table-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px;
+}
+thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background .12s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+tbody td {
+  padding: 9px 14px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+tbody td:first-child { color: var(--text); font-weight: 500; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.td-group {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.var-up   { color: var(--red);   font-family: var(--font-mono); font-weight: 600; }
+.var-down { color: var(--green); font-family: var(--font-mono); font-weight: 600; }
+.var-flat { color: var(--text3); font-family: var(--font-mono); }
+.sparkline-cell { width: 90px; }
+.sparkline-cell canvas { display: block; }
+
+/* ════════════════════════════════════════════════════════════
+   RIGHT PANEL
+   ══════════════════════════════════════════════════════════ */
+.panel {
+  width: 290px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(13,17,23,0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px 16px;
+  gap: 20px;
+}
+
+.panel-section { display: flex; flex-direction: column; gap: 10px; }
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Alert Cards */
+.alert-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  transition: border-color .15s;
+}
+.alert-card:hover { border-color: var(--border2); }
+.alert-card.alert-red    { border-left: 3px solid var(--red); }
+.alert-card.alert-amber  { border-left: 3px solid var(--amber); }
+.alert-card.alert-green  { border-left: 3px solid var(--green); }
+.alert-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.alert-icon.red   { background: var(--red-dim);   }
+.alert-icon.amber { background: var(--amber-dim); }
+.alert-icon.green { background: var(--green-dim); }
+.alert-body { flex: 1; min-width: 0; }
+.alert-name { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-val {
+  font-size: 13px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.alert-sub { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.alert-chg {
+  font-size: 11px; font-family: var(--font-mono);
+  font-weight: 700; align-self: center;
+}
+.alert-chg.up   { color: var(--red); }
+.alert-chg.down { color: var(--green); }
+
+/* Variation list */
+.var-list { display: flex; flex-direction: column; gap: 6px; }
+.var-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background .12s;
+}
+.var-row:hover { background: var(--surface2); }
+.var-rank {
+  font-size: 10px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  width: 16px; text-align: center;
+  flex-shrink: 0;
+}
+.var-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.var-name { font-size: 11px; color: var(--text2); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.var-bar-wrap { width: 50px; height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; flex-shrink: 0; overflow: hidden; }
+.var-bar { height: 100%; border-radius: 2px; }
+.var-pct {
+  font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+  min-width: 42px; text-align: right; flex-shrink: 0;
+}
+
+/* Data sources */
+.source-list { display: flex; flex-direction: column; gap: 6px; }
+.source-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.source-name { font-size: 11px; color: var(--text2); }
+.source-count {
+  font-size: 10px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--green);
+  background: var(--green-dim);
+  padding: 2px 6px; border-radius: 8px;
+}
+
+/* ── Bar Chart card ── */
+.bar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.bar-card canvas { height: 180px !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* focus visible */
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+  <aside class="sidebar" role="navigation" aria-label="Menu principal">
+
+    <div class="sidebar-logo">
+      <div class="logo-icon" aria-hidden="true">M</div>
+      <div>
+        <div class="logo-text">Meridional TCS</div>
+        <div class="logo-sub">Inteligência de Compras</div>
+      </div>
+    </div>
+
+    <div class="sidebar-search">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-input" type="search" placeholder="Buscar produto..." id="searchInput" aria-label="Buscar produto" />
+      </div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Dashboards</div>
+
+      <div class="nav-item active" tabindex="0" role="button" aria-current="page">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Cotações
+      </div>
+
+      <div class="nav-item" tabindex="0" role="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Histórico
+      </div>
+
+      <div class="nav-item" tabindex="0" role="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+        Grupos
+      </div>
+
+      <div class="nav-item" tabindex="0" role="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Alertas
+        <span class="nav-badge" aria-label="3 alertas">3</span>
+      </div>
+
+      <div class="nav-label" style="margin-top:8px">Configurações</div>
+
+      <div class="nav-item" tabindex="0" role="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0M22 12a10 10 0 0 0-10-10M2 12a10 10 0 0 0 10 10"/>
+        </svg>
+        Fontes de Dados
+      </div>
+
+      <div class="nav-item" tabindex="0" role="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Usuários
+      </div>
+    </nav>
+
+    <hr class="sidebar-divider" />
+
+    <div class="sidebar-footer">
+      <div class="user-card" tabindex="0" role="button" aria-label="Perfil do usuário">
+        <div class="user-avatar" aria-hidden="true">LF</div>
+        <div>
+          <div class="user-name">Luís F.</div>
+          <div class="user-role">Compras</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ═════════════════════════════════════════════ -->
+  <main class="main" id="main" aria-label="Conteúdo principal">
+
+    <header class="topbar">
+      <nav class="breadcrumb" aria-label="Navegação estrutural">
+        <span class="breadcrumb-root">Dashboards</span>
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        <span class="breadcrumb-cur">Cotações Químicos</span>
+      </nav>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbarDate" aria-live="polite"></span>
+        <button class="topbar-btn" aria-label="Exportar dados">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button class="topbar-btn" aria-label="Notificações" id="notifBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notif-dot" aria-hidden="true"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Filter Bar -->
+      <div class="filterbar" role="group" aria-label="Filtros de grupo">
+        <span class="filter-label">Grupo:</span>
+        <button class="filter-chip active" data-group="Todos" aria-pressed="true">Todos</button>
+        <button class="filter-chip" data-group="Ácidos" aria-pressed="false">Ácidos</button>
+        <button class="filter-chip" data-group="Álcoois" aria-pressed="false">Álcoois</button>
+        <button class="filter-chip" data-group="Tensoativos/Polisorbatos" aria-pressed="false">Polisorbatos</button>
+        <button class="filter-chip" data-group="Polímeros/PEGs" aria-pressed="false">Polímeros</button>
+        <button class="filter-chip" data-group="Edulcorantes/Outros" aria-pressed="false">Edulcorantes</button>
+        <button class="filter-chip" data-group="Outros Químicos" aria-pressed="false">Outros</button>
+        <select class="filter-select" id="dateSelect" aria-label="Data de referência">
+          <option value="">— Data —</option>
+        </select>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-row" role="list" aria-label="Indicadores principais">
+
+        <div class="kpi-card kpi-blue" role="listitem">
+          <div class="kpi-icon blue" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/>
+            </svg>
+          </div>
+          <div class="kpi-label">Produtos Monitorados</div>
+          <div class="kpi-value" id="kpiTotal">20</div>
+          <div class="kpi-sub">6 grupos ativos</div>
+        </div>
+
+        <div class="kpi-card kpi-red" role="listitem">
+          <div class="kpi-icon red" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <div class="kpi-label">Maior Alta (período)</div>
+          <div class="kpi-value" id="kpiHighest">—</div>
+          <div class="kpi-sub"><span class="badge-up" id="kpiHighestPct"></span> <span id="kpiHighestName"></span></div>
+        </div>
+
+        <div class="kpi-card kpi-green" role="listitem">
+          <div class="kpi-icon green" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+            </svg>
+          </div>
+          <div class="kpi-label">Maior Queda (período)</div>
+          <div class="kpi-value" id="kpiBigDrop">—</div>
+          <div class="kpi-sub"><span class="badge-down" id="kpiBigDropPct"></span> <span id="kpiBigDropName"></span></div>
+        </div>
+
+        <div class="kpi-card kpi-amber" role="listitem">
+          <div class="kpi-icon amber" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="kpi-label">Variação Média</div>
+          <div class="kpi-value" id="kpiAvgVar">—</div>
+          <div class="kpi-sub">Período completo</div>
+        </div>
+
+      </div><!-- /kpi-row -->
+
+      <!-- Middle grid -->
+      <div class="mid-grid">
+
+        <!-- Overview (donut) -->
+        <div class="overview-card">
+          <div class="card-header">
+            <span class="card-title">Visão Geral por Grupo</span>
+            <span class="card-badge green" id="overviewBadge" aria-live="polite">Todos os grupos</span>
+          </div>
+          <div class="overview-body">
+            <div class="donut-wrap" role="img" aria-label="Gráfico de distribuição por grupo">
+              <canvas id="donutChart" width="160" height="160"></canvas>
+              <div class="donut-center" aria-hidden="true">
+                <span class="donut-center-val" id="donutCenterVal">20</span>
+                <span class="donut-center-lbl">produtos</span>
+              </div>
+            </div>
+            <div class="group-legend" id="groupLegend" role="list" aria-label="Legenda de grupos"></div>
+          </div>
+        </div>
+
+        <!-- Right col -->
+        <div class="right-col">
+
+          <div class="mini-stats">
+            <div class="mini-card">
+              <div class="mini-lbl">Cotações hoje</div>
+              <div class="mini-val" id="miniToday">20</div>
+              <div class="mini-sub" style="color:var(--green)">↑ Atualizado</div>
+            </div>
+            <div class="mini-card">
+              <div class="mini-lbl">Em queda</div>
+              <div class="mini-val" id="miniDown" style="color:var(--green)">—</div>
+              <div class="mini-sub" style="color:var(--text3)" id="miniDownSub">produtos</div>
+            </div>
+          </div>
+
+          <div class="area-card">
+            <div class="card-header" style="margin-bottom:12px">
+              <span class="card-title" style="font-size:12px">Evolução Média (R$/MT)</span>
+              <span class="card-meta" id="areaCardMeta"></span>
+            </div>
+            <canvas id="areaChart"></canvas>
+          </div>
+
+        </div>
+      </div><!-- /mid-grid -->
+
+      <!-- Line chart -->
+      <div class="chart-card">
+        <div class="card-header" style="margin-bottom:14px">
+          <span class="card-title">Histórico de Preços — <span id="lineChartTitle">Todos os produtos</span></span>
+          <span class="card-meta" id="lineChartMeta"></span>
+        </div>
+        <canvas id="lineChart"></canvas>
+      </div>
+
+      <!-- Bar chart -->
+      <div class="bar-card">
+        <div class="card-header" style="margin-bottom:14px">
+          <span class="card-title">Preço Atual por Produto (R$/MT)</span>
+          <span class="card-badge green" id="barChartBadge">Última cotação</span>
+        </div>
+        <canvas id="barChart"></canvas>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-topbar">
+          <span class="card-title">Tabela de Cotações</span>
+          <span class="card-meta" id="tableMeta" aria-live="polite"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Tabela de cotações" tabindex="0">
+          <table id="priceTable" role="grid">
+            <thead>
+              <tr>
+                <th scope="col" data-col="item" aria-sort="none" tabindex="0">Produto <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="grupo" aria-sort="none" tabindex="0">Grupo <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="first" aria-sort="none" tabindex="0">Abertura <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="last" aria-sort="none" tabindex="0">Atual <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="var" aria-sort="none" tabindex="0">Variação <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="max" aria-sort="none" tabindex="0">Máx. <span aria-hidden="true">↕</span></th>
+                <th scope="col" data-col="min" aria-sort="none" tabindex="0">Mín. <span aria-hidden="true">↕</span></th>
+                <th scope="col">Tendência</th>
+                <th scope="col" data-col="fonte" aria-sort="none" tabindex="0">Fonte <span aria-hidden="true">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+
+  <!-- ══ RIGHT PANEL ══════════════════════════════════════ -->
+  <aside class="panel" role="complementary" aria-label="Painel de alertas e informações">
+
+    <!-- Alertas -->
+    <section class="panel-section">
+      <h2 class="panel-title">Alertas de Preço</h2>
+      <div id="alertsList" aria-live="polite"></div>
+    </section>
+
+    <!-- Variações -->
+    <section class="panel-section">
+      <h2 class="panel-title">Top Variações</h2>
+      <div class="var-list" id="varList" aria-live="polite"></div>
+    </section>
+
+    <!-- Mini bar panel -->
+    <section class="panel-section">
+      <h2 class="panel-title">Spread Preços</h2>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <canvas id="panelBar" height="150"></canvas>
+      </div>
+    </section>
+
+    <!-- Fontes -->
+    <section class="panel-section">
+      <h2 class="panel-title">Fontes de Dados</h2>
+      <div class="source-list" id="sourceList"></div>
+    </section>
+
+  </aside>
+
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   DATA
+   ══════════════════════════════════════════════════════════ */
+const DATES = ['20/03','23/03','24/03','25/03','26/03','27/03','30/03','31/03','01/04','02/04','06/04','07/04','08/04','09/04','10/04'];
+
+const PRODUCTS = [
+  {item:'ACIDO BORICO',                    grupo:'Ácidos',                     fonte:'IMARC/BusinessAnalytiq',             unidade:'MT',         prices:[4997,5025.5,4997,4987.5,4968.5,4968.5,4978,4978,4959,4902,4902,4892.5,4892.5,4845,4826]},
+  {item:'ACIDO CAPRICO C10',               grupo:'Ácidos',                     fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[9468,9522,9468,9450,9414,9414,9432,9432,9396,9288,9288,9270,9270,9180,9144]},
+  {item:'ACIDO CAPRILICO C18',             grupo:'Ácidos',                     fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[11572,11638,11572,11550,11506,11506,11528,11528,11484,11352,11352,11330,11330,11220,11176]},
+  {item:'ACIDO OLEICO',                    grupo:'Ácidos',                     fonte:'Trading Economics (Palm Oil Index)', unidade:'MT',         prices:[7101,7141.5,7101,7087.5,7060.5,7060.5,7074,7074,7047,6966,6966,6952.5,6952.5,6885,6858]},
+  {item:'ACIDO PALMITICO (MI - EVONIK)',   grupo:'Ácidos',                     fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[7890,7935,7890,7875,7845,7845,7860,7860,7830,7740,7740,7725,7725,7650,7620]},
+  {item:'ALCOOL CETILICO',                 grupo:'Álcoois',                    fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[8416,8464,8416,8400,8368,8368,8384,8384,8352,8256,8256,8240,8240,8160,8128]},
+  {item:'ALCOOL CETOESTEARILICO',          grupo:'Álcoois',                    fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[8942,8993,8942,8925,8891,8891,8908,8908,8874,8772,8772,8755,8755,8670,8636]},
+  {item:'ALCOOL CETOESTEARILICO 20 EO',    grupo:'Álcoois',                    fonte:'Estimativa (Oleoquímico)',            unidade:'MT',         prices:[10520,10580,10520,10500,10460,10460,10480,10480,10440,10320,10320,10300,10300,10200,10160]},
+  {item:'CLORETO DE BENZILA',              grupo:'Outros Químicos',            fonte:'Estimativa',                         unidade:'MT',         prices:[5786,5819,5786,5775,5753,5753,5764,5764,5742,5676,5676,5665,5665,5610,5588]},
+  {item:'DMAPA',                           grupo:'Outros Químicos',            fonte:'ChemAnalyst (Trend)',                 unidade:'MT',         prices:[9731,9786.5,9731,9712.5,9675.5,9675.5,9694,9694,9657,9546,9546,9527.5,9527.5,9435,9398]},
+  {item:'MIRISTATO DE ISOPROPILA',         grupo:'Outros Químicos',            fonte:'Estimativa',                         unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700]},
+  {item:'MOLECULAR SIEVE 3A POWDER',       grupo:'Outros Químicos',            fonte:'Estimativa',                         unidade:'MT',         prices:[15780,15870,15780,15750,15690,15690,15720,15720,15660,15480,15480,15450,15450,15300,15240]},
+  {item:'PALMITATO DE ISOPROPILA',         grupo:'Outros Químicos',            fonte:'Estimativa',                         unidade:'MT',         prices:[12624,12696,12624,12600,12552,12552,12576,12576,12528,12384,12384,12360,12360,12240,12192]},
+  {item:'PEG 3350 - POLIETILENOGLICOL',    grupo:'Polímeros/PEGs',             fonte:'ChemAnalyst',                        unidade:'MT',         prices:[6838,6877,6838,6825,6799,6799,6812,6812,6786,6708,6708,6695,6695,6630,6604]},
+  {item:'PEG 4000 - POLIETILENOGLICOL',    grupo:'Polímeros/PEGs',             fonte:'ChemAnalyst',                        unidade:'MT',         prices:[7153.6,7194.4,7153.6,7140,7112.8,7112.8,7126.4,7126.4,7099.2,7017.6,7017.6,7004,7004,6936,6908.8]},
+  {item:'POLISORBATO 20',                  grupo:'Tensoativos/Polisorbatos',   fonte:'Estimativa (Tensoativo)',             unidade:'MT',         prices:[11046,11109,11046,11025,10983,10983,11004,11004,10962,10836,10836,10815,10815,10710,10668]},
+  {item:'POLISORBATO 60',                  grupo:'Tensoativos/Polisorbatos',   fonte:'Estimativa (Tensoativo)',             unidade:'MT',         prices:[12098,12167,12098,12075,12029,12029,12052,12052,12006,11868,11868,11845,11845,11730,11684]},
+  {item:'POLISORBATO 80',                  grupo:'Tensoativos/Polisorbatos',   fonte:'Estimativa (Tensoativo)',             unidade:'MT',         prices:[13150,13225,13150,13125,13075,13075,13100,13100,13050,12900,12900,12875,12875,12750,12700]},
+  {item:'SMCA',                            grupo:'Outros Químicos',            fonte:'Estimativa',                         unidade:'MT',         prices:[9994,10051,9994,9975,9937,9937,9956,9956,9918,9804,9804,9785,9785,9690,9652]},
+  {item:'SORBITOL 70',                     grupo:'Edulcorantes/Outros',        fonte:'Quimisul/B2B',                       unidade:'Drum 300kg', prices:[3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990,3990]},
+];
+
+/* ── Group colors + dash patterns ─────────────────────────── */
+const GROUP_META = {
+  'Ácidos':                   { color: '#00e676', dash: [] },
+  'Álcoois':                  { color: '#2979ff', dash: [6,3] },
+  'Tensoativos/Polisorbatos': { color: '#d500f9', dash: [3,3] },
+  'Polímeros/PEGs':           { color: '#00e5ff', dash: [8,4,2,4] },
+  'Edulcorantes/Outros':      { color: '#ffc107', dash: [4,2] },
+  'Outros Químicos':          { color: '#ff4757', dash: [1,3] },
+};
+
+const PRODUCT_COLORS = [
+  '#00e676','#00c853','#1de9b6','#69f0ae',
+  '#2979ff','#448aff','#82b1ff',
+  '#d500f9','#ea80fc',
+  '#00e5ff','#84ffff',
+  '#ffc107','#ffd740',
+  '#ff4757','#ff6b81','#ff8a80',
+  '#ff6d00','#ffab40',
+  '#00bfa5','#76ff03',
+];
+
+const DASHES = [[],[5,3],[3,3],[8,4,2,4],[4,2],[1,3],[6,2],[10,5],[2,2],[7,3,1,3]];
+
+/* ── State ──────────────────────────────────────────────── */
+let activeGroup = 'Todos';
+let sortCol = null, sortDir = 1;
+
+/* ── Helpers ─────────────────────────────────────────────── */
+const fmt  = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtN = v => v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const pct  = (a,b) => ((b-a)/a*100).toFixed(2);
+const sign = v => v > 0 ? '+' : '';
+
+function filteredProducts() {
+  if (activeGroup === 'Todos') return PRODUCTS;
+  return PRODUCTS.filter(p => p.grupo === activeGroup);
+}
+
+/* ── Date selector ──────────────────────────────────────── */
+const dateSelect = document.getElementById('dateSelect');
+DATES.forEach((d,i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = d;
+  if (i === DATES.length-1) opt.selected = true;
+  dateSelect.appendChild(opt);
+});
+dateSelect.addEventListener('change', () => {
+  buildTable(); updateKPIs(); updateRightPanel();
+});
+
+/* ── topbar date ──────────────────────────────────────────── */
+document.getElementById('topbarDate').textContent =
+  new Date().toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+
+/* ════════════════════════════════════════════════════════════
+   CHARTS
+   ══════════════════════════════════════════════════════════ */
+Chart.defaults.color = '#8b9ab0';
+Chart.defaults.font.family = "'Fira Sans', sans-serif";
+Chart.defaults.font.size = 11;
+
+const CHART_DEFAULTS = {
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: 'rgba(17,24,32,0.95)',
+      borderColor: 'rgba(255,255,255,0.12)',
+      borderWidth: 1,
+      padding: 10,
+      titleFont: { family: "'Fira Code', monospace", size: 11 },
+      bodyFont:  { family: "'Fira Sans', sans-serif", size: 12 },
+      cornerRadius: 8,
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+      ticks: { color: '#5a6a7e', font: { size: 10, family: "'Fira Code', monospace" } }
+    },
+    y: {
+      grid: { color: 'rgba(255,255,255,0.06)', drawBorder: false },
+      ticks: { color: '#5a6a7e', font: { size: 10, family: "'Fira Code', monospace" },
+               callback: v => 'R$' + (v/1000).toFixed(0) + 'k' }
+    }
+  }
+};
+
+/* ── Donut chart ──────────────────────────────────────── */
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+let donutChart = new Chart(donutCtx, {
+  type: 'doughnut',
+  data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: '#0d1117', hoverOffset: 6 }] },
+  options: {
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(17,24,32,0.95)',
+        borderColor: 'rgba(255,255,255,0.12)',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.raw} produtos`
+        }
+      }
+    },
+    animation: { duration: 400 }
+  }
+});
+
+function updateDonut() {
+  const groups = Object.keys(GROUP_META);
+  const counts = groups.map(g => PRODUCTS.filter(p => p.grupo === g).length);
+  const colors = groups.map(g => GROUP_META[g].color);
+  donutChart.data.labels = groups.map(g => g.replace('/Polisorbatos','').replace('Edulcorantes/',''));
+  donutChart.data.datasets[0].data = counts;
+  donutChart.data.datasets[0].backgroundColor = colors;
+  donutChart.update();
+  document.getElementById('donutCenterVal').textContent = PRODUCTS.length;
+  buildGroupLegend(groups, counts, colors);
+}
+
+function buildGroupLegend(groups, counts, colors) {
+  const el = document.getElementById('groupLegend');
+  const total = counts.reduce((a,b)=>a+b,0);
+  el.innerHTML = '';
+  groups.forEach((g, i) => {
+    const avg = PRODUCTS.filter(p=>p.grupo===g).reduce((s,p)=>s+p.prices[p.prices.length-1],0) / (counts[i]||1);
+    el.innerHTML += `
+      <div class="legend-row" role="listitem">
+        <div class="legend-dot" style="background:${colors[i]}" aria-hidden="true"></div>
+        <span class="legend-name">${g.replace(' (Oleoquímico)','').replace('/Polisorbatos','')}</span>
+        <span class="legend-value">R$ ${(avg/1000).toFixed(1)}k</span>
+        <span class="legend-pct">${counts[i]}p</span>
+      </div>`;
+  });
+}
+
+/* ── Area chart (avg trend) ──────────────────────────────── */
+const areaCtx = document.getElementById('areaChart').getContext('2d');
+const areaGrad = areaCtx.createLinearGradient(0,0,0,140);
+areaGrad.addColorStop(0, 'rgba(0,230,118,0.25)');
+areaGrad.addColorStop(1, 'rgba(0,230,118,0.01)');
+
+let areaChart = new Chart(areaCtx, {
+  type: 'line',
+  data: {
+    labels: DATES,
+    datasets: [{
+      data: [],
+      borderColor: '#00e676',
+      backgroundColor: areaGrad,
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: { ...CHART_DEFAULTS.plugins },
+    scales: {
+      x: { ...CHART_DEFAULTS.scales.x },
+      y: { ...CHART_DEFAULTS.scales.y }
+    },
+    animation: { duration: 500 }
+  }
+});
+
+function updateAreaChart() {
+  const prods = filteredProducts();
+  const avgs = DATES.map((_,i) => {
+    const vals = prods.map(p => p.prices[i]).filter(v => v != null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  });
+  areaChart.data.datasets[0].data = avgs;
+  areaChart.update();
+
+  const first = avgs[0], last = avgs[avgs.length-1];
+  const v = ((last-first)/first*100).toFixed(2);
+  document.getElementById('areaCardMeta').textContent =
+    (v >= 0 ? '▲' : '▼') + ' ' + Math.abs(v) + '%';
+  document.getElementById('areaCardMeta').style.color = v >= 0 ? 'var(--red)' : 'var(--green)';
+}
+
+/* ── Line chart ─────────────────────────────────────────── */
+const lineCtx = document.getElementById('lineChart').getContext('2d');
+let lineChart = new Chart(lineCtx, {
+  type: 'line',
+  data: { labels: DATES, datasets: [] },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: {
+      ...CHART_DEFAULTS.plugins,
+      legend: { display: false },
+      tooltip: {
+        ...CHART_DEFAULTS.plugins.tooltip,
+        mode: 'index', intersect: false,
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: R$ ${fmtN(ctx.raw)}`
+        }
+      }
+    },
+    interaction: { mode: 'index', intersect: false },
+    animation: { duration: 600 }
+  }
+});
+
+function updateLineChart() {
+  const prods = filteredProducts();
+  lineChart.data.datasets = prods.map((p,i) => ({
+    label: p.item,
+    data: p.prices,
+    borderColor: PRODUCT_COLORS[i % PRODUCT_COLORS.length],
+    borderDash: DASHES[i % DASHES.length],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    tension: 0.3,
+  }));
+  lineChart.update();
+  document.getElementById('lineChartTitle').textContent =
+    activeGroup === 'Todos' ? 'Todos os produtos' : activeGroup;
+  document.getElementById('lineChartMeta').textContent =
+    `${prods.length} séries · ${DATES.length} datas`;
+}
+
+/* ── Bar chart ─────────────────────────────────────────── */
+const barCtx = document.getElementById('barChart').getContext('2d');
+let barChart = new Chart(barCtx, {
+  type: 'bar',
+  data: { labels: [], datasets: [] },
+  options: {
+    ...CHART_DEFAULTS,
+    indexAxis: 'y',
+    plugins: {
+      ...CHART_DEFAULTS.plugins,
+      tooltip: {
+        ...CHART_DEFAULTS.plugins.tooltip,
+        callbacks: { label: ctx => ` R$ ${fmtN(ctx.raw)}` }
+      }
+    },
+    scales: {
+      x: { ...CHART_DEFAULTS.scales.x },
+      y: { ...CHART_DEFAULTS.scales.y,
+           ticks: { color:'#8b9ab0', font:{ size:10 }, callback: v => String(v).substring(0,20) }
+         }
+    },
+    animation: { duration: 500 }
+  }
+});
+
+function updateBarChart() {
+  const prods = filteredProducts();
+  const last = prods.map(p => p.prices[p.prices.length-1]);
+  const colors = prods.map(p => GROUP_META[p.grupo]?.color || '#00e676');
+  barChart.data.labels = prods.map(p => p.item.substring(0,22));
+  barChart.data.datasets = [{
+    data: last,
+    backgroundColor: colors.map(c => c + '88'),
+    borderColor: colors,
+    borderWidth: 1,
+    borderRadius: 4,
+  }];
+  barChart.update();
+  document.getElementById('barChartBadge').textContent = `Cotação ${DATES[DATES.length-1]}`;
+}
+
+/* ── Panel bar chart ────────────────────────────────────── */
+const panelBarCtx = document.getElementById('panelBar').getContext('2d');
+let panelBarChart = new Chart(panelBarCtx, {
+  type: 'bar',
+  data: { labels: [], datasets: [] },
+  options: {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(17,24,32,0.95)',
+        borderColor: 'rgba(255,255,255,0.12)',
+        borderWidth: 1,
+        padding: 8,
+        cornerRadius: 8,
+        callbacks: { label: ctx => ` R$ ${fmtN(ctx.raw)}` }
+      }
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{color:'#5a6a7e',font:{size:9}} },
+      y: { grid:{color:'rgba(255,255,255,0.05)',drawBorder:false},
+           ticks:{color:'#5a6a7e',font:{size:9},callback:v=>'R$'+(v/1000).toFixed(0)+'k'} }
+    },
+    animation:{duration:400}
+  }
+});
+
+function updatePanelBar() {
+  const groups = Object.keys(GROUP_META);
+  const avgs = groups.map(g => {
+    const prods = PRODUCTS.filter(p=>p.grupo===g);
+    if (!prods.length) return 0;
+    return prods.reduce((s,p)=>s+p.prices[p.prices.length-1],0)/prods.length;
+  });
+  panelBarChart.data.labels = groups.map(g => g.split('/')[0].substring(0,8));
+  panelBarChart.data.datasets = [{
+    data: avgs,
+    backgroundColor: groups.map(g => (GROUP_META[g]?.color||'#00e676')+'66'),
+    borderColor: groups.map(g => GROUP_META[g]?.color||'#00e676'),
+    borderWidth: 1,
+    borderRadius: 3,
+  }];
+  panelBarChart.update();
+}
+
+/* ════════════════════════════════════════════════════════════
+   TABLE
+   ══════════════════════════════════════════════════════════ */
+function buildTable() {
+  const prods = filteredProducts();
+  const idx = parseInt(dateSelect.value);
+  const refIdx = isNaN(idx) ? DATES.length-1 : idx;
+
+  let rows = prods.map(p => {
+    const cur   = p.prices[refIdx] ?? p.prices[p.prices.length-1];
+    const first = p.prices[0];
+    const max   = Math.max(...p.prices);
+    const min   = Math.min(...p.prices);
+    const v     = parseFloat(pct(first, cur));
+    return { ...p, cur, first, max, min, v };
+  });
+
+  if (sortCol) {
+    rows.sort((a,b) => {
+      const va = a[sortCol], vb = b[sortCol];
+      if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+      return sortDir * (va - vb);
+    });
+  }
+
+  const tbody = document.getElementById('tableBody');
+  const gColor = g => GROUP_META[g]?.color || '#8b9ab0';
+
+  tbody.innerHTML = rows.map(r => {
+    const varClass = r.v > 0 ? 'var-up' : r.v < 0 ? 'var-down' : 'var-flat';
+    const varSign  = r.v > 0 ? '▲' : r.v < 0 ? '▼' : '▬';
+    const gc = gColor(r.grupo);
+    return `<tr>
+      <td title="${r.item}">${r.item}</td>
+      <td><span class="td-group" style="background:${gc}18;color:${gc}">${r.grupo.split('/')[0]}</span></td>
+      <td class="td-mono">${fmtN(r.first)}</td>
+      <td class="td-mono" style="color:${gc};font-weight:700">${fmtN(r.cur)}</td>
+      <td class="${varClass}">${varSign} ${Math.abs(r.v)}%</td>
+      <td class="td-mono">${fmtN(r.max)}</td>
+      <td class="td-mono">${fmtN(r.min)}</td>
+      <td class="sparkline-cell"><canvas id="sp_${r.item.replace(/\s/g,'_')}" width="90" height="28"></canvas></td>
+      <td style="color:var(--text3);font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fonte}">${r.fonte}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableMeta').textContent =
+    `${rows.length} produto${rows.length!==1?'s':''} · cotação ${DATES[refIdx]}`;
+
+  // Sparklines
+  rows.forEach(r => {
+    const cvs = document.getElementById('sp_' + r.item.replace(/\s/g,'_'));
+    if (!cvs) return;
+    const c = cvs.getContext('2d');
+    const grad = c.createLinearGradient(0,0,90,0);
+    const color = gColor(r.grupo);
+    new Chart(cvs, {
+      type: 'line',
+      data: {
+        labels: DATES,
+        datasets: [{ data: r.prices, borderColor: color, borderWidth: 1.5, pointRadius: 0, tension: 0.4 }]
+      },
+      options: {
+        plugins: { legend:{display:false}, tooltip:{enabled:false} },
+        scales: { x:{display:false}, y:{display:false} },
+        animation: { duration: 0 },
+        responsive: false,
+      }
+    });
+  });
+}
+
+/* sort */
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) { sortDir *= -1; }
+    else { sortCol = col; sortDir = 1; }
+    document.querySelectorAll('thead th').forEach(t => t.removeAttribute('aria-sort'));
+    th.setAttribute('aria-sort', sortDir === 1 ? 'ascending' : 'descending');
+    buildTable();
+  });
+  th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); th.click(); } });
+});
+
+/* ════════════════════════════════════════════════════════════
+   KPIs
+   ══════════════════════════════════════════════════════════ */
+function updateKPIs() {
+  const idx = parseInt(dateSelect.value);
+  const refIdx = isNaN(idx) ? DATES.length-1 : idx;
+
+  const vars = PRODUCTS.map(p => ({
+    item: p.item,
+    v: parseFloat(pct(p.prices[0], p.prices[refIdx] ?? p.prices[p.prices.length-1]))
+  }));
+
+  const highs = [...vars].sort((a,b)=>b.v-a.v);
+  const drops = [...vars].sort((a,b)=>a.v-b.v);
+  const avg   = vars.reduce((s,x)=>s+x.v,0)/vars.length;
+
+  const getPrice = nm => {
+    const p = PRODUCTS.find(x=>x.item===nm);
+    return p ? (p.prices[refIdx] ?? p.prices[p.prices.length-1]) : 0;
+  };
+
+  document.getElementById('kpiTotal').textContent = PRODUCTS.length;
+  document.getElementById('kpiHighest').textContent   = fmt(getPrice(highs[0].item)).replace('R$ ','R$ ');
+  document.getElementById('kpiHighestPct').textContent = (highs[0].v>0?'+':'') + highs[0].v + '%';
+  document.getElementById('kpiHighestName').textContent = highs[0].item.substring(0,20);
+  document.getElementById('kpiBigDrop').textContent    = fmt(getPrice(drops[0].item));
+  document.getElementById('kpiBigDropPct').textContent  = drops[0].v + '%';
+  document.getElementById('kpiBigDropName').textContent = drops[0].item.substring(0,20);
+  document.getElementById('kpiAvgVar').textContent = (avg>0?'+':'') + avg.toFixed(2) + '%';
+  document.getElementById('kpiAvgVar').style.color = avg > 0 ? 'var(--red)' : avg < 0 ? 'var(--green)' : 'var(--text)';
+
+  // mini stats
+  const down = vars.filter(v=>v.v<0).length;
+  document.getElementById('miniDown').textContent = down;
+  document.getElementById('miniDownSub').textContent = `de ${PRODUCTS.length} produtos`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RIGHT PANEL
+   ══════════════════════════════════════════════════════════ */
+function updateRightPanel() {
+  const idx = parseInt(dateSelect.value);
+  const refIdx = isNaN(idx) ? DATES.length-1 : idx;
+
+  const enriched = PRODUCTS.map(p => ({
+    ...p,
+    cur: p.prices[refIdx] ?? p.prices[p.prices.length-1],
+    v:   parseFloat(pct(p.prices[0], p.prices[refIdx] ?? p.prices[p.prices.length-1]))
+  }));
+
+  /* Alerts: top 5 most expensive */
+  const top5 = [...enriched].sort((a,b)=>b.cur-a.cur).slice(0,5);
+  const alertsEl = document.getElementById('alertsList');
+  alertsEl.innerHTML = top5.map((p,i) => {
+    const cls = i===0 ? 'alert-red' : i<3 ? 'alert-amber' : 'alert-green';
+    const icls = i===0 ? 'red' : i<3 ? 'amber' : 'green';
+    const emoji = i===0 ? '🔴' : i<3 ? '🟡' : '🟢';
+    const gc = GROUP_META[p.grupo]?.color || '#8b9ab0';
+    return `
+    <div class="alert-card ${cls}" role="alert">
+      <div class="alert-icon ${icls}" aria-hidden="true">${emoji}</div>
+      <div class="alert-body">
+        <div class="alert-name" title="${p.item}">${p.item}</div>
+        <div class="alert-val">${fmt(p.cur)}</div>
+        <div class="alert-sub">${p.grupo.split('/')[0]} · ${p.unidade}</div>
+      </div>
+      <div class="alert-chg ${p.v>=0?'up':'down'}" aria-label="Variação ${p.v}%">${p.v>0?'+':''}${p.v}%</div>
+    </div>`;
+  }).join('');
+
+  /* Top variations */
+  const sorted = [...enriched].sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,8);
+  const maxAbsV = Math.max(...sorted.map(p=>Math.abs(p.v)));
+  const varListEl = document.getElementById('varList');
+  varListEl.innerHTML = sorted.map((p,i) => {
+    const isDown = p.v < 0;
+    const color  = GROUP_META[p.grupo]?.color || '#8b9ab0';
+    const barW   = maxAbsV > 0 ? (Math.abs(p.v)/maxAbsV*100) : 0;
+    const barColor = isDown ? 'var(--green)' : 'var(--red)';
+    return `
+    <div class="var-row">
+      <span class="var-rank">${i+1}</span>
+      <span class="var-dot" style="background:${color}" aria-hidden="true"></span>
+      <span class="var-name" title="${p.item}">${p.item}</span>
+      <div class="var-bar-wrap" aria-hidden="true">
+        <div class="var-bar" style="width:${barW}%;background:${barColor}"></div>
+      </div>
+      <span class="var-pct" style="color:${barColor}">${p.v>0?'+':''}${p.v}%</span>
+    </div>`;
+  }).join('');
+
+  /* Data sources */
+  const sources = {};
+  PRODUCTS.forEach(p => {
+    const k = p.fonte.split(' (')[0].split('/')[0].substring(0,20);
+    sources[k] = (sources[k]||0) + 1;
+  });
+  document.getElementById('sourceList').innerHTML =
+    Object.entries(sources).sort((a,b)=>b[1]-a[1]).map(([k,v]) =>
+      `<div class="source-row">
+        <span class="source-name">${k}</span>
+        <span class="source-count">${v}</span>
+      </div>`
+    ).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   FILTER CHIPS
+   ══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.filter-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed','false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed','true');
+    activeGroup = btn.dataset.group;
+    refreshAll();
+  });
+});
+
+/* ── Search ────────────────────────────────────────────────── */
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#tableBody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════ */
+function refreshAll() {
+  updateKPIs();
+  updateDonut();
+  updateAreaChart();
+  updateLineChart();
+  updateBarChart();
+  buildTable();
+  updateRightPanel();
+}
+
+refreshAll();
+updatePanelBar();
+</script>
+</body>
+</html>
