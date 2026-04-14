@@ -1,14 +1,11 @@
 """
 Dashboard de Cotações Químicas
-Requer: pip install dash plotly pandas openpyxl requests
+Requer: pip install dash plotly pandas pyodbc
 Execução: python app.py
 Acesso: http://localhost:8050
 """
 
-import os
-import io
-import hashlib
-import requests
+import pyodbc
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output, callback_context
 import plotly.graph_objects as go
@@ -16,19 +13,20 @@ from datetime import datetime
 
 # ─── CONFIGURAÇÃO ────────────────────────────────────────────────────────────
 
-# Fonte de dados: arquivo sincronizado pelo OneDrive Desktop
-LOCAL_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "..", "..", "Arquivos", "Python", "importado", "historico_precos_quimicos.xlsx"
-)
-LOCAL_PATH = os.path.normpath(LOCAL_PATH)
-ONEDRIVE_URL = (
-    "https://meridionaltcs-my.sharepoint.com/personal/bi_mtcs_com_br"
-    "/Documents/Arquivos/Python/importado/historico_precos_quimicos.xlsx"
-    "?download=1"
+# Fonte de dados: SQL Server (Windows Authentication)
+SQL_SERVER     = "CORPORATIVOMTCS"
+SQL_DATABASE   = "corporativomtcs"
+SQL_TABLE      = "dbo.historico_precos_quimicos"
+SQL_DRIVER     = "ODBC Driver 17 for SQL Server"
+
+CONN_STRING = (
+    f"DRIVER={{{SQL_DRIVER}}};"
+    f"SERVER={SQL_SERVER};"
+    f"DATABASE={SQL_DATABASE};"
+    "Trusted_Connection=yes;"
 )
 
-# Polling: verifica mudança no arquivo a cada N segundos
+# Polling: verifica mudança no banco a cada N segundos
 POLL_INTERVAL_MS = 30_000  # 30 segundos
 
 # ─── PALETA ──────────────────────────────────────────────────────────────────
@@ -56,49 +54,35 @@ CORES = {
 
 # ─── DADOS ───────────────────────────────────────────────────────────────────
 
-_cache_hash = None
-
-
-def _hash_bytes(data: bytes) -> str:
-    return hashlib.md5(data).hexdigest()
-
-
-def _baixar_onedrive() -> bytes | None:
-    try:
-        r = requests.get(ONEDRIVE_URL, timeout=15)
-        if r.status_code == 200:
-            return r.content
-    except Exception:
-        pass
-    return None
-
-
-def _ler_local() -> bytes | None:
-    if os.path.exists(LOCAL_PATH):
-        with open(LOCAL_PATH, "rb") as f:
-            return f.read()
-    return None
+_cache_contagem = None
 
 
 def carregar_dados() -> tuple[pd.DataFrame, str, bool]:
     """
     Retorna (df, fonte_str, mudou).
-    Lê direto do arquivo sincronizado pelo OneDrive Desktop.
+    Lê direto do SQL Server via Windows Authentication.
     """
-    global _cache_hash
+    global _cache_contagem
 
-    raw = _ler_local()
-    if raw is None:
-        return pd.DataFrame(), f"Arquivo não encontrado: {LOCAL_PATH}", False
+    try:
+        conn = pyodbc.connect(CONN_STRING, timeout=10)
+    except Exception as e:
+        return pd.DataFrame(), f"Erro de conexão: {e}", False
 
-    novo_hash = _hash_bytes(raw)
-    mudou = novo_hash != _cache_hash
-    _cache_hash = novo_hash
+    try:
+        df = pd.read_sql(f"SELECT * FROM {SQL_TABLE} ORDER BY Data", conn)
+    except Exception as e:
+        conn.close()
+        return pd.DataFrame(), f"Erro na query: {e}", False
 
-    df = pd.read_excel(io.BytesIO(raw))
+    conn.close()
+
     df["Data"] = pd.to_datetime(df["Data"])
-    df = df.sort_values("Data")
-    return df, "OneDrive (local sync)", mudou
+    nova_contagem = len(df)
+    mudou = nova_contagem != _cache_contagem
+    _cache_contagem = nova_contagem
+
+    return df, f"SQL Server · {SQL_SERVER}/{SQL_DATABASE}", mudou
 
 
 # ─── LÓGICA DE NEGÓCIO ───────────────────────────────────────────────────────

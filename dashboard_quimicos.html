@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
   /* ─── RESET & TOKENS ─────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -189,6 +190,79 @@
     font-family: var(--mono); transition: all var(--transition);
   }
   .update-btn:hover { border-color: var(--amber); background: rgba(255,170,0,.12); box-shadow: 0 0 16px rgba(255,170,0,.1); }
+
+  /* ─── UPLOAD BTN ─────────────────────────────────────────── */
+  .upload-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border: 1px solid rgba(0,170,255,.3);
+    border-radius: var(--radius-sm); background: rgba(0,170,255,.06);
+    color: var(--blue); cursor: pointer; font-size: 12px;
+    font-family: var(--mono); transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .upload-btn:hover { border-color: var(--blue); background: rgba(0,170,255,.14); box-shadow: 0 0 16px rgba(0,170,255,.12); }
+  .upload-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  #xlsxFileInput { display: none; }
+
+  /* ─── DRAG DROP OVERLAY ──────────────────────────────────── */
+  .drop-overlay {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .drop-overlay.active { opacity: 1; pointer-events: auto; }
+  .drop-zone {
+    border: 2px dashed var(--blue);
+    border-radius: 20px; padding: 60px 80px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    text-align: center;
+    background: rgba(0,170,255,.04);
+    box-shadow: 0 0 60px rgba(0,170,255,.12);
+    transition: all .2s;
+  }
+  .drop-zone.hover { border-color: var(--green); background: rgba(0,255,65,.06); box-shadow: 0 0 60px rgba(0,255,65,.15); }
+  .drop-icon { color: var(--blue); }
+  .drop-zone.hover .drop-icon { color: var(--green); }
+  .drop-title { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--text); }
+  .drop-sub { font-size: 13px; color: var(--muted); }
+  .drop-formats { font-size: 11px; color: var(--muted); font-family: var(--mono);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 12px; }
+
+  /* ─── TOAST ──────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    font-size: 13px; font-family: var(--mono);
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(0.4,0,0.2,1);
+    max-width: 380px; pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: #050f05; border: 1px solid var(--border-h); color: var(--green); box-shadow: 0 0 24px rgba(0,255,65,.15); }
+  #toast.error   { background: #100505; border: 1px solid rgba(255,68,68,.4); color: var(--red); box-shadow: 0 0 24px rgba(255,68,68,.12); }
+  #toast.info    { background: #050a10; border: 1px solid rgba(0,170,255,.35); color: var(--blue); box-shadow: 0 0 24px rgba(0,170,255,.12); }
+  #toast svg { flex-shrink: 0; }
+
+  /* ─── UPLOAD PROGRESS ────────────────────────────────────── */
+  .upload-progress {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    z-index: 9999; background: #050a10;
+    border: 1px solid rgba(0,170,255,.35);
+    border-radius: var(--radius); padding: 20px 28px;
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 320px; opacity: 0;
+    transition: all .3s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+  }
+  .upload-progress.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .progress-label { font-family: var(--mono); font-size: 12px; color: var(--blue); display: flex; justify-content: space-between; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 3px; width: 0%; transition: width .3s ease; }
 
   /* ─── CONTENT ────────────────────────────────────────────── */
   .content { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
@@ -605,6 +679,40 @@
     </div>
   </div>
 </div>
+<!-- Toast -->
+<div id="toast">
+  <svg id="toastIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- Upload Progress -->
+<div class="upload-progress" id="uploadProgress">
+  <div class="progress-label">
+    <span id="progressLabel">Processando arquivo...</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<!-- Drag & Drop Overlay -->
+<div class="drop-overlay" id="dropOverlay">
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <div class="drop-title">Solte o arquivo aqui</div>
+    <div class="drop-sub">ou clique no botão <strong style="color:var(--blue)">Upload XLSX</strong> na barra superior</div>
+    <div class="drop-formats">.xlsx · .xls · .csv</div>
+  </div>
+</div>
+
+<!-- Hidden File Input -->
+<input type="file" id="xlsxFileInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
+
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
 <div class="layout">
@@ -658,6 +766,10 @@
       <div class="topbar-meta">
         <div class="live-badge"><div class="live-dot"></div>AO VIVO</div>
         <div class="topbar-date" id="topbarDate"></div>
+        <button class="upload-btn" onclick="document.getElementById('xlsxFileInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload XLSX
+        </button>
         <button class="update-btn" onclick="openModal()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           Auto-Update
@@ -815,56 +927,48 @@
     </div><!-- /content -->
 
     <footer class="footer">
-      <div>QUÍMICOS PRO · v2.0 · Dados: <code>historico_precos_quimicos.xlsx</code></div>
-      <div>Última atualização: <span id="footerTime">—</span> · <a href="#" onclick="openModal()">Configurar Auto-Update</a></div>
+      <div>QUÍMICOS PRO · v2.0 · Fonte: <code>SQL Server · corporativomtcs · dbo.historico_precos_quimicos</code></div>
+      <div>Última atualização: <span id="footerTime">—</span></div>
     </footer>
   </main>
 </div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   DATA GENERATION
+   DATA — SQL Server via app.py (/api/precos)
    ════════════════════════════════════════════════════════════ */
-const GROUPS = {
-  'Solventes':    { color:'#00ff41', products:['Acetona','Tolueno','Etanol','Hexano'],           basePrice:[1850,2100,2400,1650] },
-  'Ácidos':       { color:'#ff4444', products:['Ácido Sulfúrico','Ácido Clorídrico','Ácido Nítrico'], basePrice:[890,1240,1580] },
-  'Bases':        { color:'#00aaff', products:['Soda Cáustica','Carbonato de Sódio','Hidróxido de Amônio'], basePrice:[2800,980,1100] },
-  'Polímeros':    { color:'#ffaa00', products:['PVC','Polietileno','Polipropileno'],              basePrice:[4200,4800,4500] },
-  'Surfactantes': { color:'#cc44ff', products:['LABS','AES','Coco Amida'],                        basePrice:[3100,3600,2900] },
-};
+const GROUPS    = {};
+const ALL_DATES = [];
+let   N         = 0;
+const DATA      = {};
 
-function generateDates(days) {
-  const dates = [];
-  const end = new Date('2026-04-03');
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(end);
-    d.setDate(d.getDate() - i);
-    if (d.getDay() !== 0 && d.getDay() !== 6) // skip weekends
-      dates.push(d.toISOString().slice(0,10));
+const API_URL = '/api/precos';
+
+async function fetchFromAPI() {
+  try {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+
+    ALL_DATES.length = 0;
+    json.dates.forEach(d => ALL_DATES.push(d));
+    N = ALL_DATES.length;
+
+    Object.keys(GROUPS).forEach(k => delete GROUPS[k]);
+    Object.keys(DATA).forEach(k => delete DATA[k]);
+
+    for (const [grp, info] of Object.entries(json.grupos)) {
+      GROUPS[grp] = { color: info.color, products: Object.keys(info.produtos) };
+      DATA[grp]   = info.produtos;
+    }
+
+    selectedGroups = new Set(Object.keys(GROUPS));
+    return true;
+  } catch(e) {
+    console.error('Erro ao buscar dados:', e);
+    showToast('Erro ao conectar com a API — verifique se o app.py está rodando.', 'error');
+    return false;
   }
-  return dates;
-}
-
-function generatePrices(base, n) {
-  const prices = [base];
-  for (let i = 1; i < n; i++) {
-    const trend = 1 + (Math.random() - 0.48) * 0.03;
-    const spike = Math.random() < 0.02 ? (Math.random() < 0.5 ? 1.06 : 0.94) : 1;
-    prices.push(Math.max(base * 0.5, prices[i-1] * trend * spike));
-  }
-  return prices.map(p => +p.toFixed(2));
-}
-
-const ALL_DATES = generateDates(400);
-const N = ALL_DATES.length;
-
-// Build dataset
-const DATA = {};
-for (const [grp, info] of Object.entries(GROUPS)) {
-  DATA[grp] = {};
-  info.products.forEach((prod, idx) => {
-    DATA[grp][prod] = generatePrices(info.basePrice[idx], N);
-  });
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1300,15 +1404,18 @@ function refreshData() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   btn.disabled = true;
-  setTimeout(() => {
-    buildChart();
-    updateKPIs();
-    buildGroupCards();
-    renderTable();
-    updateTimestamp();
+  fetchFromAPI().then(ok => {
+    if (ok) {
+      buildGroupChips();
+      buildChart();
+      updateKPIs();
+      buildGroupCards();
+      renderTable();
+      updateTimestamp();
+    }
     btn.classList.remove('spinning');
     btn.disabled = false;
-  }, 900);
+  });
 }
 
 function updateTimestamp() {
@@ -1344,21 +1451,251 @@ document.getElementById('updateModal').addEventListener('click', function(e) { i
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
 /* ════════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const el  = document.getElementById('toast');
+  const ico = document.getElementById('toastIcon');
+  const txt = document.getElementById('toastMsg');
+  const icons = {
+    success: '<polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2.5"/>',
+    error:   '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  };
+  ico.innerHTML = icons[type] || icons.info;
+  txt.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 4000);
+}
+
+function setProgress(pct, label) {
+  const prog = document.getElementById('uploadProgress');
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent  = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+  if (pct === 0)   prog.classList.add('show');
+  if (pct >= 100)  setTimeout(() => prog.classList.remove('show'), 800);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DRAG & DROP
+   ════════════════════════════════════════════════════════════ */
+(function initDragDrop() {
+  let dragCounter = 0;
+  const overlay = document.getElementById('dropOverlay');
+  const zone    = document.getElementById('dropZone');
+
+  document.addEventListener('dragenter', e => {
+    if ([...e.dataTransfer.types].includes('Files')) {
+      dragCounter++;
+      overlay.classList.add('active');
+    }
+  });
+  document.addEventListener('dragleave', () => {
+    dragCounter--;
+    if (dragCounter <= 0) { dragCounter = 0; overlay.classList.remove('active'); zone.classList.remove('hover'); }
+  });
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('hover');
+  });
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    dragCounter = 0;
+    overlay.classList.remove('active');
+    zone.classList.remove('hover');
+    const file = e.dataTransfer.files[0];
+    if (file) processXLSXFile(file);
+  });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   FILE SELECT (input)
+   ════════════════════════════════════════════════════════════ */
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (file) processXLSXFile(file);
+  input.value = ''; // reset so same file can be re-uploaded
+}
+
+/* ════════════════════════════════════════════════════════════
+   XLSX PARSER + DASHBOARD REBUILD
+   ════════════════════════════════════════════════════════════ */
+function processXLSXFile(file) {
+  const allowed = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                   'application/vnd.ms-excel', 'text/csv', ''];
+  if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+    showToast('Formato inválido. Use .xlsx, .xls ou .csv', 'error'); return;
+  }
+
+  showToast(`Lendo "${file.name}"...`, 'info');
+  setProgress(0, 'Lendo arquivo...');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      setProgress(30, 'Parseando planilha...');
+
+      const data = new Uint8Array(e.target.result);
+      const wb   = XLSX.read(data, { type: 'array', cellDates: true });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      setProgress(55, 'Identificando colunas...');
+
+      if (rows.length < 2) { showToast('Planilha vazia ou sem dados.', 'error'); setProgress(100,''); return; }
+
+      // ── Detectar cabeçalhos ─────────────────────────────────
+      const headers = rows[0].map(h => String(h).trim().toLowerCase());
+      const find = (...terms) => {
+        for (const t of terms) {
+          const i = headers.findIndex(h => h.includes(t));
+          if (i >= 0) return i;
+        }
+        return -1;
+      };
+
+      const iData   = find('data','date');
+      const iProd   = find('produto','product','item','nome','description');
+      const iGrp    = find('grupo','group','categoria','categoria','category'); // col G fallback = 6
+      const iPreco  = find('preco','preço','price','valor','value','cotacao','cotação');
+
+      // Fallback: se não encontrou grupo pelo nome, usa coluna G (índice 6)
+      const grpIdx  = iGrp >= 0 ? iGrp : 6;
+      const prodIdx = iProd >= 0 ? iProd : 1;
+      const dataIdx = iData >= 0 ? iData : 0;
+      const precIdx = iPreco >= 0 ? iPreco : (headers.length - 1);
+
+      setProgress(70, 'Construindo séries temporais...');
+
+      // ── Processar linhas ────────────────────────────────────
+      const raw = {}; // { grupo: { produto: { 'YYYY-MM-DD': preco } } }
+
+      for (let i = 1; i < rows.length; i++) {
+        const row   = rows[i];
+        if (!row || row.every(c => c === '')) continue;
+
+        let dateVal = row[dataIdx];
+        let dateStr = '';
+
+        if (dateVal instanceof Date) {
+          dateStr = dateVal.toISOString().slice(0,10);
+        } else if (typeof dateVal === 'number') {
+          // Excel serial date
+          const d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+          dateStr = d.toISOString().slice(0,10);
+        } else {
+          dateStr = String(dateVal).slice(0,10);
+        }
+
+        if (!dateStr || dateStr.length < 8) continue;
+
+        const prod  = String(row[prodIdx] || '').trim();
+        const grp   = String(row[grpIdx]  || 'Outros').trim();
+        const preco = parseFloat(String(row[precIdx]).replace(',','.'));
+
+        if (!prod || isNaN(preco) || preco <= 0) continue;
+
+        if (!raw[grp]) raw[grp] = {};
+        if (!raw[grp][prod]) raw[grp][prod] = {};
+        raw[grp][prod][dateStr] = preco;
+      }
+
+      setProgress(85, 'Reorganizando datas...');
+
+      if (!Object.keys(raw).length) {
+        showToast('Nenhum dado válido encontrado. Verifique as colunas.', 'error');
+        setProgress(100,''); return;
+      }
+
+      // ── Montar datas únicas ordenadas ───────────────────────
+      const allDatesSet = new Set();
+      for (const grp of Object.values(raw))
+        for (const prod of Object.values(grp))
+          Object.keys(prod).forEach(d => allDatesSet.add(d));
+
+      const sortedDates = [...allDatesSet].sort();
+
+      // ── Rebuild global DATA + GROUPS + ALL_DATES ────────────
+      const GROUP_COLORS = ['#00ff41','#ff4444','#00aaff','#ffaa00','#cc44ff','#00ccaa','#ff7700','#ff44aa'];
+      let colorIdx = 0;
+
+      // Reset globals
+      Object.keys(GROUPS).forEach(k => delete GROUPS[k]);
+      Object.keys(DATA).forEach(k => delete DATA[k]);
+      ALL_DATES.length = 0;
+      sortedDates.forEach(d => ALL_DATES.push(d));
+
+      for (const [grp, prods] of Object.entries(raw)) {
+        const color = GROUP_COLORS[colorIdx++ % GROUP_COLORS.length];
+        GROUPS[grp] = { color, products: Object.keys(prods), basePrice: [] };
+        DATA[grp]   = {};
+
+        for (const [prod, dateMap] of Object.entries(prods)) {
+          // Preencher datas ausentes com último valor (forward fill)
+          const series = [];
+          let last = null;
+          for (const d of sortedDates) {
+            if (dateMap[d] !== undefined) last = dateMap[d];
+            series.push(last !== null ? last : 0);
+          }
+          DATA[grp][prod] = series;
+          GROUPS[grp].basePrice.push(series[0] || 0);
+        }
+      }
+
+      setProgress(95, 'Atualizando dashboard...');
+
+      // Reset filtros
+      selectedGroups = new Set(Object.keys(GROUPS));
+
+      // Rebuild tudo
+      buildGroupChips();
+      buildChart();
+      updateKPIs();
+      buildGroupCards();
+      renderTable();
+      updateTimestamp();
+
+      setProgress(100, 'Concluído!');
+      showToast(`✓ ${Object.keys(GROUPS).length} grupos · ${Object.values(DATA).reduce((t,g)=>t+Object.keys(g).length,0)} produtos · ${sortedDates.length} datas carregados`, 'success');
+
+      // Atualiza rodapé com nome do arquivo
+      document.querySelector('.footer div:first-child').innerHTML =
+        `QUÍMICOS PRO · v2.0 · Dados: <code>${file.name}</code>`;
+
+    } catch(err) {
+      console.error(err);
+      showToast('Erro ao processar arquivo: ' + err.message, 'error');
+      setProgress(100,'');
+    }
+  };
+
+  reader.onerror = () => { showToast('Erro ao ler o arquivo.', 'error'); setProgress(100,''); };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ════════════════════════════════════════════════════════════
    INIT
    ════════════════════════════════════════════════════════════ */
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   updateTimestamp();
-  buildGroupChips();
-  buildChart();
-  updateKPIs();
-  buildGroupCards();
-  renderTable();
 
-  setTimeout(() => {
-    document.getElementById('loadingOverlay').classList.add('hidden');
-  }, 2000);
+  const ok = await fetchFromAPI();
+  if (ok) {
+    buildGroupChips();
+    buildChart();
+    updateKPIs();
+    buildGroupCards();
+    renderTable();
+    showToast('Dados carregados do SQL Server', 'success');
+  }
 
-  // Auto refresh every 5 minutes (simulate)
+  document.getElementById('loadingOverlay').classList.add('hidden');
+
+  // Auto refresh a cada 5 minutos
   setInterval(refreshData, 5 * 60 * 1000);
 });
 </script>

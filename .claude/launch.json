@@ -2,6 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "Quimicos Pro Dashboard",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8766", "--directory", "C:\\Users\\lsilva\\OneDrive - Meridional TCS Ind e Com de Oleos S A\\Dados\\IA\\claude_code"],
+      "port": 8766,
+      "autoPort": false
+    },
+    {
       "name": "Dashboard Cotações (Dash)",
       "runtimeExecutable": "python",
       "runtimeArgs": ["app.py"],
