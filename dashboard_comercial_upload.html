@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridional — Analytics Comercial</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --sidebar: #111111;
+  --card: #161616;
+  --card2: #1e1e1e;
+  --border: #2a2a2a;
+  --border2: #333333;
+  --red: #c41230;
+  --red-hover: #e8193f;
+  --red-dim: rgba(196,18,48,0.15);
+  --teal: #0d9488;
+  --teal-dim: rgba(13,148,136,0.15);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.15);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.15);
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --text-muted: #4b5563;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  display: flex;
+  background: var(--bg);
+  font-family: 'Fira Sans', system-ui, sans-serif;
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ─── SIDEBAR ──────────────────────────────────────────────── */
+.sidebar {
+  width: 190px;
+  min-width: 190px;
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-mark { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--red);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fira Code', monospace;
+  font-weight: 700; font-size: 15px; color: white; letter-spacing: -1px;
+}
+
+.logo-text { font-family: 'Fira Code', monospace; font-weight: 700; font-size: 13px; color: var(--text); letter-spacing: 1px; text-transform: uppercase; }
+.logo-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 1px; }
+
+.sidebar-section { padding: 16px 12px 8px; }
+
+.sidebar-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted); padding: 0 8px; margin-bottom: 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: var(--radius-sm);
+  color: var(--text-dim); cursor: pointer;
+  transition: all 150ms ease; font-size: 13px; font-weight: 400;
+  user-select: none; margin-bottom: 2px;
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+.nav-item.active { background: var(--red-dim); color: var(--red-hover); font-weight: 500; }
+.nav-item.active .nav-icon { color: var(--red); opacity: 1; }
+
+.nav-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+
+.sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
+
+.user-chip {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: background 150ms;
+}
+.user-chip:hover { background: rgba(255,255,255,0.05); }
+
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+}
+
+.user-info { min-width: 0; }
+.user-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 10px; color: var(--text-muted); }
+.user-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); display: inline-block; margin-right: 4px; }
+
+/* ─── MAIN ──────────────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* ─── TOPBAR ─────────────────────────────────────────────────── */
+.topbar {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.topbar-row1 { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.page-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.btn-atualizar {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--red); color: white; border: none;
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: background 150ms; white-space: nowrap;
+}
+.btn-atualizar:hover { background: var(--red-hover); }
+
+.topbar-row2 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-right: 2px; }
+
+.btn-filter {
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--text-dim); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: all 150ms; white-space: nowrap;
+}
+.btn-filter:hover { border-color: var(--red); color: var(--text); }
+.btn-filter.active { background: var(--red-dim); border-color: var(--red); color: var(--red-hover); }
+
+.filter-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+.select-filter {
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text); padding: 5px 28px 5px 10px;
+  border-radius: 20px; font-size: 12px; font-family: inherit;
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  transition: border-color 150ms;
+}
+.select-filter:hover { border-color: var(--red); }
+.select-filter:focus { outline: none; border-color: var(--red); }
+
+/* ─── META BAR ─────────────────────────────────────────────── */
+.meta-bar-wrap {
+  padding: 12px 24px; border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+  display: flex; align-items: center; gap: 14px;
+}
+
+.meta-label { font-size: 12px; color: var(--text-dim); font-weight: 500; white-space: nowrap; }
+
+.meta-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+
+.meta-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c41230, #e8193f);
+  border-radius: 3px; transition: width 0.6s ease;
+  box-shadow: 0 0 8px rgba(196,18,48,0.5);
+}
+
+.meta-value { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.meta-pct { font-size: 12px; color: var(--red-hover); font-weight: 700; margin-left: 2px; }
+
+/* ─── CONTENT ───────────────────────────────────────────────── */
+.content {
+  flex: 1; overflow-y: auto;
+  padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.content::-webkit-scrollbar { width: 5px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── KPI CARDS ─────────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.kpi-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px 14px;
+  overflow: hidden; transition: border-color 150ms; cursor: default;
+}
+.kpi-card:hover { border-color: var(--border2); }
+
+.kpi-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); }
+
+.kpi-icon-wrap { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.kpi-value { font-family: 'Fira Code', monospace; font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; margin-bottom: 10px; }
+
+.kpi-footer { display: flex; align-items: center; justify-content: space-between; }
+
+.kpi-sparkline { height: 28px; flex: 1; max-width: 100px; }
+
+.kpi-badge { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 12px; display: flex; align-items: center; gap: 3px; }
+.badge-up { background: rgba(13,148,136,0.15); color: var(--teal); }
+.badge-down { background: rgba(196,18,48,0.15); color: var(--red-hover); }
+
+/* ─── MIDDLE ROW ─────────────────────────────────────────────── */
+.middle-row { display: flex; gap: 14px; align-items: flex-start; }
+
+.heatmap-wrap {
+  flex: 1; min-width: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+
+.right-panel { width: 300px; min-width: 300px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ─── SECTION HEADERS ────────────────────────────────────────── */
+.section-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.section-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.section-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ─── HEATMAP ────────────────────────────────────────────────── */
+.heatmap-months {
+  display: grid; grid-template-columns: 170px repeat(var(--hm-cols,3), 1fr);
+  gap: 4px; margin-bottom: 8px;
+}
+
+.heatmap-month-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: center; padding: 4px 0; letter-spacing: 0.5px; }
+
+.heatmap-rows { display: flex; flex-direction: column; gap: 4px; }
+
+.heatmap-row { display: grid; grid-template-columns: 170px repeat(var(--hm-cols,3), 1fr); gap: 4px; align-items: center; }
+
+.heatmap-row-label { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; font-weight: 500; }
+
+.heatmap-cell {
+  border-radius: 6px; padding: 10px 6px;
+  text-align: center; font-family: 'Fira Code', monospace;
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9);
+  transition: transform 150ms, box-shadow 150ms;
+  cursor: default; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.heatmap-cell:hover { transform: scale(1.04); box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1; }
+.heatmap-cell.zero { background: rgba(255,255,255,0.03) !important; color: var(--text-muted); }
+
+.heatmap-legend { display: flex; align-items: center; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+.legend-label { font-size: 10px; color: var(--text-muted); }
+.legend-gradient { width: 80px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(196,18,48,0.1), rgba(196,18,48,1)); }
+
+/* ─── PANEL CARDS ──────────────────────────────────────────────── */
+.panel-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+
+.donut-container { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+
+.donut-chart-wrap { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-pct { font-family: 'Fira Code', monospace; font-size: 16px; font-weight: 700; }
+.donut-sub { font-size: 9px; color: var(--text-muted); }
+
+.donut-legend { flex: 1; }
+
+.legend-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.legend-item:last-child { border-bottom: none; }
+.legend-dot-name { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.legend-val { font-family: 'Fira Code', monospace; font-size: 12px; font-weight: 600; }
+
+/* ─── GRUPO BARS ──────────────────────────────────────────────── */
+.grupo-bars { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.grupo-bar-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.grupo-bar-name { font-size: 11px; color: var(--text-dim); }
+.grupo-bar-val { font-size: 11px; font-weight: 600; font-family: 'Fira Code', monospace; }
+
+.grupo-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.grupo-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+/* ─── PAÍSES ──────────────────────────────────────────────────── */
+.pais-list { margin-top: 12px; }
+
+.pais-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.pais-item:last-child { border-bottom: none; }
+.pais-rank { width: 18px; font-size: 10px; color: var(--text-muted); font-weight: 600; text-align: center; }
+.pais-flag { font-size: 16px; width: 20px; text-align: center; }
+.pais-name { flex: 1; font-size: 12px; }
+.pais-bar-wrap { width: 50px; position: relative; }
+.pais-bar-bg { width: 50px; height: 4px; background: var(--border); border-radius: 2px; }
+.pais-bar-fill { position: absolute; top: 0; left: 0; height: 4px; border-radius: 2px; background: var(--blue); }
+.pais-val { font-size: 11px; font-weight: 600; font-family: 'Fira Code', monospace; color: var(--text-dim); width: 44px; text-align: right; }
+
+/* ─── TABLE ─────────────────────────────────────────────────── */
+.table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+.table-header-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  text-align: left; font-size: 10px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-muted); padding: 10px 20px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background 150ms; cursor: default; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody td { padding: 11px 20px; font-size: 13px; }
+
+td.td-num { font-family: 'Fira Code', monospace; font-size: 12px; }
+
+.rank-badge { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.rank-1 { background: rgba(245,158,11,0.2); color: var(--amber); }
+.rank-2 { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.rank-3 { background: rgba(180,120,80,0.2); color: #c87941; }
+.rank-n { background: var(--border); color: var(--text-muted); }
+
+.share-bar-wrap { width: 80px; position: relative; }
+.share-bar-bg { width: 80px; height: 4px; background: var(--border); border-radius: 2px; }
+.share-bar-fill { position: absolute; top: 0; left: 0; height: 4px; border-radius: 2px; background: var(--red); }
+.share-pct { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+/* ─── TOOLTIP ───────────────────────────────────────────────── */
+.tooltip {
+  position: fixed; background: #1e1e1e; border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 14px; font-size: 12px;
+  pointer-events: none; z-index: 9999; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); white-space: nowrap;
+}
+.tooltip-title { font-weight: 600; margin-bottom: 4px; }
+.tooltip-val { font-family: 'Fira Code', monospace; font-size: 13px; color: var(--red-hover); }
+
+/* ─── SCROLLBAR ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 1200px) { .right-panel { width: 260px; min-width: 260px; } .kpi-value { font-size: 22px; } }
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .middle-row { flex-direction: column; }
+  .right-panel { width: 100%; min-width: 0; flex-direction: row; flex-wrap: wrap; }
+  .panel-card { flex: 1; min-width: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* ─── UPLOAD BTN ────────────────────────────────────────────── */
+.btn-upload {
+  display: flex; align-items: center; gap: 7px;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border2); padding: 7px 14px;
+  border-radius: var(--radius-sm); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: all 150ms; white-space: nowrap;
+}
+.btn-upload:hover { border-color: var(--red); color: var(--text); }
+
+/* ─── LOADING OVERLAY ───────────────────────────────────────── */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+}
+.loading-overlay.visible { display: flex; }
+
+.loading-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--red);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text { font-size: 14px; color: var(--text-dim); }
+.loading-sub  { font-size: 12px; color: var(--text-muted); }
+
+/* ─── TOAST ─────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transform: translateY(80px); opacity: 0;
+  transition: all 300ms ease;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--teal); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">M</div>
+      <div>
+        <div class="logo-text">Meridional</div>
+        <div class="logo-sub">Analytics</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Menu</div>
+    <div class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Relatórios
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Vendedores
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Produtos
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Mercados
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+      Campanhas
+    </div>
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px">
+    <div class="sidebar-label">Sistema</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12H4M20 12h2"/></svg>
+      Configurações
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">LS</div>
+      <div class="user-info">
+        <div class="user-name">Comercial</div>
+        <div class="user-role"><span class="user-dot"></span>Conta ativa</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ─── MAIN ─────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-row1">
+      <div>
+        <div class="page-title">Analytics Comercial</div>
+        <div class="page-sub">Performance de faturamento por suporte venda</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="file" id="xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(this)">
+        <button class="btn-upload" onclick="document.getElementById('xlsx-input').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Carregar XLSX
+        </button>
+        <button class="btn-atualizar" id="btn-atualizar" onclick="document.getElementById('xlsx-input').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Atualizar
+        </button>
+      </div>
+    </div>
+    <div class="topbar-row2">
+      <div class="filter-group" id="year-filter-group">
+        <span class="filter-label">Ano</span>
+        <button class="btn-filter active" data-year="all" onclick="setYear('all',this)">Todos</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group" data-filter="periodo">
+        <span class="filter-label">Mês</span>
+        <button class="btn-filter active" data-period="all" onclick="setPeriod('all',this)">Todos</button>
+        <button class="btn-filter" data-period="jan" onclick="setPeriod('jan',this)">Jan/26</button>
+        <button class="btn-filter" data-period="fev" onclick="setPeriod('fev',this)">Fev/26</button>
+        <button class="btn-filter" data-period="mar" onclick="setPeriod('mar',this)">Mar/26</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">Mercado</span>
+        <button class="btn-filter active" data-mercado="all" onclick="setMercado('all',this)">Todos</button>
+        <button class="btn-filter" data-mercado="ext" onclick="setMercado('ext',this)">Exterior</button>
+        <button class="btn-filter" data-mercado="int" onclick="setMercado('int',this)">Interno</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">Vendedor</span>
+        <select class="select-filter" onchange="setVendedor(this.value)">
+          <option value="all">Todos os vendedores</option>
+        </select>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">Grupo</span>
+        <select class="select-filter" id="sel-grupo" onchange="setGrupo(this.value)">
+          <option value="all">Todos os sub grupos</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- META BAR -->
+  <div class="meta-bar-wrap">
+    <span class="meta-label" id="meta-label">Faturamento YTD 2026</span>
+    <div class="meta-bar-track">
+      <div class="meta-bar-fill" id="meta-fill" style="width:80.5%"></div>
+    </div>
+    <span class="meta-value" id="meta-val">R$ <b>96,6M</b> / R$ 120M meta</span>
+    <span class="meta-pct" id="meta-pct">(80,5%)</span>
+  </div>
+
+  <!-- SCROLLABLE CONTENT -->
+  <div class="content">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">Faturamento Total</div>
+          <div class="kpi-icon-wrap" style="background:var(--red-dim)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c41230" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-fat" style="color:var(--red-hover)">96,6M</div>
+        <div class="kpi-footer">
+          <canvas class="kpi-sparkline" id="spark-fat"></canvas>
+          <div class="kpi-badge badge-up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>+12,4%</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">NFs Emitidas</div>
+          <div class="kpi-icon-wrap" style="background:var(--blue-dim)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-nfs" style="color:var(--blue)">396</div>
+        <div class="kpi-footer">
+          <canvas class="kpi-sparkline" id="spark-nfs"></canvas>
+          <div class="kpi-badge badge-up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>+8,2%</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">Clientes Ativos</div>
+          <div class="kpi-icon-wrap" style="background:var(--teal-dim)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-cli" style="color:var(--teal)">139</div>
+        <div class="kpi-footer">
+          <canvas class="kpi-sparkline" id="spark-cli"></canvas>
+          <div class="kpi-badge badge-up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>+5,3%</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">Ticket Médio / NF</div>
+          <div class="kpi-icon-wrap" style="background:var(--amber-dim)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-ticket" style="color:var(--amber)">243,9K</div>
+        <div class="kpi-footer">
+          <canvas class="kpi-sparkline" id="spark-ticket"></canvas>
+          <div class="kpi-badge badge-down"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>−3,1%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE ROW -->
+    <div class="middle-row">
+
+      <!-- HEATMAP -->
+      <div class="heatmap-wrap">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Heatmap — Sub Vendedor × Mês</div>
+            <div class="section-sub">Volume de faturamento por período (R$)</div>
+          </div>
+        </div>
+        <div class="heatmap-months" id="heatmap-header">
+          <div></div>
+          <div class="heatmap-month-label">Jan/26</div>
+          <div class="heatmap-month-label">Fev/26</div>
+          <div class="heatmap-month-label">Mar/26</div>
+        </div>
+        <div class="heatmap-rows" id="heatmap-body"></div>
+        <div class="heatmap-legend">
+          <span class="legend-label">Menor</span>
+          <div class="legend-gradient"></div>
+          <span class="legend-label">Maior</span>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+
+        <div class="panel-card">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Taxa de Mercado</div>
+              <div class="section-sub">Split Exterior vs Interno</div>
+            </div>
+          </div>
+          <div class="donut-container">
+            <div class="donut-chart-wrap">
+              <canvas id="chart-donut" width="90" height="90"></canvas>
+              <div class="donut-center">
+                <span class="donut-pct" id="donut-pct" style="color:var(--red-hover)">74%</span>
+                <span class="donut-sub">Exterior</span>
+              </div>
+            </div>
+            <div class="donut-legend" id="donut-legend">
+              <div class="legend-item">
+                <div class="legend-dot-name"><div class="legend-dot" style="background:var(--red)"></div>Exterior</div>
+                <span class="legend-val">71,5M</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot-name"><div class="legend-dot" style="background:var(--amber)"></div>Interno</div>
+                <span class="legend-val">25,1M</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Análise por Sub Grupo</div>
+              <div class="section-sub">Col. AH — Faturamento acumulado YTD</div>
+            </div>
+          </div>
+          <div class="grupo-bars" id="grupo-bars"></div>
+        </div>
+
+        <div class="panel-card">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Top Países — Exterior</div>
+              <div class="section-sub">Por volume faturado</div>
+            </div>
+          </div>
+          <div class="pais-list" id="pais-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-header-row">
+        <div>
+          <div class="section-title">Suporte Venda — Performance Detalhada</div>
+          <div class="section-sub">Col. F · filtro por Sub Grupo (AH) e Vendedor</div>
+        </div>
+        <span id="data-source-badge" style="font-size:10px;padding:3px 10px;border-radius:12px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:600;letter-spacing:0.5px">DEMO</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Vendedor / Suporte Venda</th>
+            <th>Faturamento</th>
+            <th>Share</th>
+            <th>NFs</th>
+            <th>Clientes</th>
+            <th>Ticket Médio</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Carregando arquivo...</div>
+  <div class="loading-sub" id="loading-sub">Aguarde</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-msg"></span>
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-title" id="tt-title"></div>
+  <div class="tooltip-val" id="tt-val"></div>
+</div>
+
+<script>
+// ─── DATA (com breakdown mensal real) ─────────────────────────
+const DATA = {
+  monthly: { jan: 42129428, fev: 36086466, mar: 18352697 },
+  monthlyNfs: { jan: 151, fev: 172, mar: 73 },
+  monthlyCli: { jan: 84, fev: 73, mar: 52 },
+  meta: 120000000,
+
+  mercadoMes: {
+    exterior: { jan: 32691787, fev: 25995368, mar: 12830988 },
+    interno:  { jan:  9437642, fev: 10091098, mar:  5521709 }
+  },
+
+  gruposMes: [
+    { name: 'GLICERINA',    color: '#c41230', jan: 20971610, fev: 17989409, mar:  9139005 },
+    { name: 'ACIDO GRAXO',  color: '#3b82f6', jan: 11942730, fev: 10254711, mar:  7141182 },
+    { name: 'OLEO VEGETAL', color: '#0d9488', jan:  2735574, fev:  2346523, mar:  1192349 },
+    { name: 'OLEOQUIMICO',  color: '#f59e0b', jan:  2009306, fev:  1723497, mar:   875478 },
+    { name: 'LECITINA',     color: '#8b5cf6', jan:  1925400, fev:  1651565, mar:   839089 },
+    { name: 'ESTER',        color: '#ec4899', jan:   726887, fev:   623437, mar:   316427 }
+  ],
+
+  heatmap: [
+    { name: 'ARIANE MANTOVANI',    jan: 10763658, fev:  7520628, mar: 3165886 },
+    { name: 'HBI SOUTH AM. (117)', jan:  9712298, fev:  4606548, mar: 2944381 },
+    { name: 'CLEAN WORLD',         jan:  3353337, fev:  1591593, mar: 1168417 },
+    { name: 'GRANSOY REPRES.',     jan:  2637299, fev:  2410422, mar: 1480338 },
+    { name: 'HBI SOUTH AM. (29)',  jan:  2470487, fev:  4332453, mar: 2105451 },
+    { name: 'DSA REPRESENTAÇÕES',  jan:   214095, fev:  3235950, mar: 1705373 },
+    { name: 'PREMIUM ASSESSORIA',  jan:  1261800, fev:  2696968, mar:       0 },
+    { name: 'CLAUDIA JAUREGUI',    jan:  1588376, fev:  2030838, mar:       0 }
+  ],
+
+  vendedores: [
+    { name: 'ARIANE MANTOVANI',   fat: {jan:19923923,fev:15229616,mar:10073856}, nfs: {jan:29,fev:30,mar:14}, cli: {jan:18,fev:14,mar:10},
+      grupos: ['GLICERINA','ACIDO GRAXO','OLEO VEGETAL','OLEOQUIMICO','LECITINA','ESTER'] },
+    { name: 'PREMIUM ASSESSORIA', fat: {jan:10193549,fev:8245200,mar:994374},    nfs: {jan:27,fev:43,mar:1},  cli: {jan:4,fev:4,mar:1},
+      grupos: ['GLICERINA','ACIDO GRAXO'] },
+    { name: 'LUCAS VENDRAMIN',    fat: {jan:3649055,fev:3467081,mar:2392567},    nfs: {jan:24,fev:25,mar:19}, cli: {jan:9,fev:10,mar:11},
+      grupos: ['ACIDO GRAXO','OLEO VEGETAL','OLEOQUIMICO','LECITINA'] },
+    { name: 'KONRAD ASSESSORIA',  fat: {jan:2696726,fev:3901316,mar:1880104},    nfs: {jan:37,fev:41,mar:21}, cli: {jan:28,fev:26,mar:15},
+      grupos: ['OLEO VEGETAL','OLEOQUIMICO','LECITINA','ESTER'] },
+    { name: 'BRUNO SARTORI',      fat: {jan:2637299,fev:2690925,mar:1241548},    nfs: {jan:20,fev:21,mar:11}, cli: {jan:14,fev:14,mar:10},
+      grupos: ['GLICERINA','ACIDO GRAXO','ESTER'] },
+    { name: 'CLAUDIA JAUREGUI',   fat: {jan:2574314,fev:2340552,mar:651681},     nfs: {jan:11,fev:9,mar:3},   cli: {jan:10,fev:5,mar:3},
+      grupos: ['GLICERINA','OLEOQUIMICO'] },
+    { name: 'LUIZ IZELLI',        fat: {jan:454397,fev:31776,mar:4640},          nfs: {jan:2,fev:1,mar:2},    cli: {jan:1,fev:1,mar:1},
+      grupos: ['ESTER','LECITINA'] }
+  ],
+
+  paises: [
+    { name: 'China',       value: 31229726, flag: '🇨🇳' },
+    { name: 'Netherlands', value: 19097047, flag: '🇳🇱' },
+    { name: 'Rússia',      value:  5316564, flag: '🇷🇺' },
+    { name: 'Indonésia',   value:  2361112, flag: '🇮🇩' },
+    { name: 'Malásia',     value:  1743315, flag: '🇲🇾' }
+  ]
+};
+
+// ─── STATE ────────────────────────────────────────────────────
+let state = { period: 'all', mercado: 'all', vendedor: 'all', grupo: 'all', year: 'all' };
+
+// ─── RAW RECORDS (para re-agregação por filtro de mercado) ────
+let allRecords = [];
+
+// ─── HELPERS ──────────────────────────────────────────────────
+const MONTH_KEYS = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'};
+const MONTH_PT   = {jan:'Jan',fev:'Fev',mar:'Mar',abr:'Abr',mai:'Mai',jun:'Jun',jul:'Jul',ago:'Ago',set:'Set',out:'Out',nov:'Nov',dez:'Dez'};
+let MONTHS       = ['jan','fev','mar'];
+let MONTH_LABELS = ['Jan/26','Fev/26','Mar/26'];
+let YEAR_SUFFIX  = '26'; // sufixo do ano para labels de mês (ex: '26' → Jan/26)
+
+function activeMonths() {
+  return state.period === 'all' ? MONTHS : (MONTHS.includes(state.period) ? [state.period] : MONTHS);
+}
+
+function getFilteredRecords() {
+  if (!allRecords.length) return [];
+  let recs = allRecords;
+  if (state.year !== 'all') {
+    const yr = +state.year;
+    recs = recs.filter(r => r.year === yr);
+  }
+  if (state.mercado !== 'all') {
+    const ext = state.mercado === 'ext';
+    recs = recs.filter(r => ext ? r.mercado.includes('EXT') : !r.mercado.includes('EXT'));
+  }
+  return recs;
+}
+
+function recompute() {
+  if (!allRecords.length) return;
+  const agg = computeAggregations(getFilteredRecords());
+  DATA.monthly    = agg.monthly;
+  DATA.monthlyNfs = agg.monthlyNfs;
+  DATA.monthlyCli = agg.monthlyCli;
+  DATA.mercadoMes = agg.mercadoMes;
+  DATA.gruposMes  = agg.gruposMes;
+  DATA.vendedores = agg.vendedores;
+  DATA.heatmap    = agg.heatmap;
+  DATA.paises     = agg.paises;
+
+  // Atualiza meses e anos disponíveis para o subconjunto filtrado
+  if (agg.availMonths && agg.availMonths.length > 0) {
+    MONTHS = agg.availMonths;
+    // Sufixo: ano filtrado ou mais recente dos dados
+    if (agg.availYears && agg.availYears.length > 0) {
+      const yr = state.year !== 'all' ? state.year : String(agg.availYears[agg.availYears.length - 1]);
+      YEAR_SUFFIX = String(yr).slice(-2);
+      updateYearButtons(agg.availYears);
+    }
+    MONTH_LABELS = MONTHS.map(mk => MONTH_PT[mk] + '/' + YEAR_SUFFIX);
+    if (state.period !== 'all' && !MONTHS.includes(state.period)) state.period = 'all';
+    updatePeriodButtons();
+  }
+
+  // Atualiza selects com valores reais do subconjunto
+  const selVen = document.querySelector('select.select-filter[onchange="setVendedor(this.value)"]');
+  if (selVen && agg.vendedores.length > 0) {
+    const prev = state.vendedor;
+    selVen.innerHTML = '<option value="all">Todos os vendedores</option>' +
+      agg.vendedores.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+    const stillExists = agg.vendedores.some(v => v.name === prev);
+    state.vendedor = stillExists ? prev : 'all';
+    selVen.value = state.vendedor;
+  }
+
+  const selGrupo = document.getElementById('sel-grupo');
+  if (selGrupo && agg.gruposMes.length > 0) {
+    const prev = state.grupo;
+    selGrupo.innerHTML = '<option value="all">Todos os sub grupos</option>' +
+      agg.gruposMes.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+    const stillExists = agg.gruposMes.some(g => g.name === prev);
+    state.grupo = stillExists ? prev : 'all';
+    selGrupo.value = state.grupo;
+  }
+}
+
+function updateYearButtons(years) {
+  const grp = document.getElementById('year-filter-group');
+  if (!grp) return;
+  grp.querySelectorAll('[data-year]:not([data-year="all"])').forEach(b => b.remove());
+  years.forEach(yr => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-filter' + (state.year === String(yr) ? ' active' : '');
+    btn.dataset.year = yr;
+    btn.textContent = String(yr);
+    btn.onclick = function() { setYear(String(yr), this); };
+    grp.appendChild(btn);
+  });
+  // Garante que "Todos" reflete state.year
+  const allBtn = grp.querySelector('[data-year="all"]');
+  if (allBtn) allBtn.classList.toggle('active', state.year === 'all');
+}
+
+function updatePeriodButtons() {
+  const grp = document.querySelector('.filter-group[data-filter="periodo"]');
+  if (!grp) return;
+  grp.querySelectorAll('[data-period]:not([data-period="all"])').forEach(b => b.remove());
+  MONTHS.forEach((mk, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-filter' + (state.period === mk ? ' active' : '');
+    btn.dataset.period = mk;
+    btn.textContent = MONTH_LABELS[i];
+    btn.onclick = function() { setPeriod(mk, this); };
+    grp.appendChild(btn);
+  });
+  const allBtn = grp.querySelector('[data-period="all"]');
+  if (allBtn) allBtn.classList.toggle('active', state.period === 'all');
+}
+
+function sumMonths(obj) {
+  return activeMonths().reduce((s,m) => s + (obj[m] || 0), 0);
+}
+
+// Retorna fração do mercado selecionado (para modo demo sem allRecords)
+function getMercadoRatio() {
+  if (state.mercado === 'all' || allRecords.length > 0) return 1;
+  const ms = activeMonths();
+  const total = ms.reduce((s,m) => s + (DATA.monthly[m] || 0), 0);
+  if (total === 0) return 1;
+  const m = state.mercado === 'ext' ? DATA.mercadoMes.exterior : DATA.mercadoMes.interno;
+  return ms.reduce((s,mk) => s + (m[mk] || 0), 0) / total;
+}
+
+function fmtM(v) {
+  if (v >= 1e6) return 'R$ ' + (v/1e6).toFixed(1).replace('.',',') + 'M';
+  if (v >= 1e3) return 'R$ ' + (v/1e3).toFixed(1).replace('.',',') + 'K';
+  return 'R$ ' + v.toLocaleString('pt-BR');
+}
+
+function fmtShort(v) {
+  if (v >= 1e6) return (v/1e6).toFixed(1).replace('.',',') + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1).replace('.',',') + 'K';
+  return v.toLocaleString('pt-BR');
+}
+
+function fmtFull(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ─── SPARKLINES ───────────────────────────────────────────────
+function drawSparkline(id, data, color) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || 90;
+  const h = canvas.offsetHeight || 28;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  const mx = Math.max(...data), mn = Math.min(...data), rng = mx - mn || 1;
+  const pts = data.map((v,i) => ({
+    x: (i / (data.length-1)) * w,
+    y: h - ((v-mn)/rng) * (h-6) - 3
+  }));
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, color+'40'); g.addColorStop(1, color+'00');
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath();
+  ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
+}
+
+// ─── KPI UPDATE ───────────────────────────────────────────────
+function updateKPIs() {
+  const ms = activeMonths();
+  const ratio = getMercadoRatio();
+  const fat = ms.reduce((s,m) => s + (DATA.monthly[m] || 0), 0) * ratio;
+  const nfs = Math.round(ms.reduce((s,m) => s + (DATA.monthlyNfs[m] || 0), 0) * ratio);
+  const cli = Math.round(ms.reduce((s,m) => s + (DATA.monthlyCli[m] || 0), 0) * ratio);
+  const ticket = nfs > 0 ? fat / nfs : 0;
+
+  document.getElementById('kpi-fat').textContent    = fmtShort(fat);
+  document.getElementById('kpi-nfs').textContent    = nfs.toLocaleString('pt-BR');
+  document.getElementById('kpi-cli').textContent    = cli.toLocaleString('pt-BR');
+  document.getElementById('kpi-ticket').textContent = fmtShort(ticket);
+}
+
+// ─── HEATMAP ─────────────────────────────────────────────────
+function buildHeatmap() {
+  // Atualiza variável CSS para número dinâmico de colunas
+  document.documentElement.style.setProperty('--hm-cols', MONTHS.length);
+
+  const header = document.getElementById('heatmap-header');
+  header.innerHTML = '<div></div>' + MONTH_LABELS.map((l,i) => {
+    const active = state.period === 'all' || state.period === MONTHS[i];
+    return `<div class="heatmap-month-label" style="opacity:${active?1:0.35}">${l}</div>`;
+  }).join('');
+
+  const hmRatio = getMercadoRatio();
+  let allV = [];
+  DATA.heatmap.forEach(r => MONTHS.forEach(m => allV.push((r[m] || 0) * hmRatio)));
+  const maxV = Math.max(...allV, 0);
+
+  const body = document.getElementById('heatmap-body');
+  body.innerHTML = '';
+
+  DATA.heatmap.forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'heatmap-row';
+    const short = row.name.length > 22 ? row.name.slice(0,20)+'…' : row.name;
+    div.innerHTML = `<div class="heatmap-row-label" title="${row.name}">${short}</div>`;
+
+    MONTHS.forEach((m, mi) => {
+      const v = (row[m] || 0) * hmRatio;
+      const active = state.period === 'all' || state.period === m;
+      const ratio = maxV > 0 ? v/maxV : 0;
+      const op = v === 0 ? 0 : Math.max(0.12, ratio);
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell' + (v === 0 ? ' zero' : '');
+      if (!active) cell.style.opacity = '0.2';
+      if (v > 0) {
+        cell.style.background = `rgba(196,18,48,${op})`;
+        cell.style.border = `1px solid rgba(196,18,48,${Math.min(op+0.1,1)})`;
+      }
+      cell.textContent = v === 0 ? '—' : fmtM(v);
+      cell.dataset.name = row.name;
+      cell.dataset.mes  = MONTH_LABELS[mi];
+      cell.dataset.val  = v;
+      cell.addEventListener('mouseenter', showTT);
+      cell.addEventListener('mousemove',  moveTT);
+      cell.addEventListener('mouseleave', hideTT);
+      div.appendChild(cell);
+    });
+    body.appendChild(div);
+  });
+}
+
+// ─── TOOLTIP ──────────────────────────────────────────────────
+const ttEl = document.getElementById('tooltip');
+function showTT(e) {
+  const v = +e.currentTarget.dataset.val;
+  if (!v) return;
+  document.getElementById('tt-title').textContent = e.currentTarget.dataset.name + ' — ' + e.currentTarget.dataset.mes;
+  document.getElementById('tt-val').textContent   = fmtFull(v);
+  ttEl.style.display = 'block';
+  moveTT(e);
+}
+function moveTT(e) { ttEl.style.left = (e.clientX+12)+'px'; ttEl.style.top = (e.clientY-44)+'px'; }
+function hideTT()  { ttEl.style.display = 'none'; }
+
+// ─── GRUPO BARS (responde a filtro de período e mercado) ──────────────
+function buildGrupos() {
+  const ms = activeMonths();
+  const ratio = getMercadoRatio();
+  const computed = DATA.gruposMes.map(g => ({
+    name: g.name,
+    color: g.color,
+    value: ms.reduce((s,m) => s + (g[m] || 0), 0) * ratio
+  })).sort((a,b) => b.value - a.value);
+
+  const total = computed.reduce((s,g) => s + g.value, 0);
+  const maxVal = computed[0].value;
+
+  document.getElementById('grupo-bars').innerHTML = computed.map(g => {
+    const pct  = total > 0 ? (g.value/total*100).toFixed(1) : '0.0';
+    const barW = maxVal > 0 ? (g.value/maxVal*100).toFixed(1) : '0';
+    return `<div>
+      <div class="grupo-bar-header">
+        <span class="grupo-bar-name">${g.name}</span>
+        <span class="grupo-bar-val">${fmtM(g.value)}</span>
+      </div>
+      <div class="grupo-bar-track"><div class="grupo-bar-fill" style="width:${barW}%;background:${g.color}"></div></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${pct}% do total</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PAÍSES ───────────────────────────────────────────────────
+function buildPaises() {
+  if (!DATA.paises || DATA.paises.length === 0) return;
+  const max = DATA.paises[0].value;
+  document.getElementById('pais-list').innerHTML = DATA.paises.map((p,i) => {
+    const w = (p.value/max*100).toFixed(1);
+    return `<div class="pais-item">
+      <span class="pais-rank">${i+1}</span>
+      <span class="pais-flag">${p.flag}</span>
+      <span class="pais-name">${p.name}</span>
+      <div class="pais-bar-wrap"><div class="pais-bar-bg"></div><div class="pais-bar-fill" style="width:${w}%"></div></div>
+      <span class="pais-val">${fmtM(p.value)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── TABLE (responde a filtros vendedor, grupo, período e mercado) ────
+function buildTable() {
+  const ms = activeMonths();
+  const ratio = getMercadoRatio();
+
+  // compute vendedores for active period, filter by grupo and vendedor
+  let rows = DATA.vendedores.map(v => ({
+    name: v.name,
+    fat:  ms.reduce((s,m) => s + (v.fat[m] || 0), 0) * ratio,
+    nfs:  Math.round(ms.reduce((s,m) => s + (v.nfs[m] || 0), 0) * ratio),
+    cli:  Math.round(ms.reduce((s,m) => s + (v.cli[m] || 0), 0) * ratio),
+    grupos: v.grupos
+  }));
+
+  // filter by grupo
+  if (state.grupo !== 'all') {
+    rows = rows.filter(v => v.grupos.includes(state.grupo));
+  }
+
+  // filter by vendedor
+  if (state.vendedor !== 'all') {
+    rows = rows.filter(v => v.name === state.vendedor);
+  }
+
+  rows.sort((a,b) => b.fat - a.fat);
+
+  const total = rows.reduce((s,v) => s + v.fat, 0);
+  const maxFat = rows.length > 0 ? rows[0].fat : 1;
+  const rc = i => i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
+
+  document.getElementById('table-body').innerHTML = rows.map((v,i) => {
+    const share  = total > 0 ? (v.fat/total*100).toFixed(1) : '0.0';
+    const barW   = maxFat > 0 ? (v.fat/maxFat*100).toFixed(1) : '0';
+    const ticket = v.nfs > 0 ? v.fat/v.nfs : 0;
+    return `<tr>
+      <td><span class="rank-badge ${rc(i)}">${i+1}</span></td>
+      <td style="font-weight:500">${v.name}</td>
+      <td class="td-num">${fmtM(v.fat)}</td>
+      <td>
+        <div class="share-bar-wrap"><div class="share-bar-bg"></div><div class="share-bar-fill" style="width:${barW}%"></div></div>
+        <div class="share-pct">${share}%</div>
+      </td>
+      <td class="td-num" style="color:var(--blue)">${v.nfs}</td>
+      <td class="td-num" style="color:var(--teal)">${v.cli}</td>
+      <td class="td-num" style="color:var(--amber)">${fmtM(ticket)}</td>
+    </tr>`;
+  }).join('');
+
+  // update table subtitle
+  const periodLabel = state.period === 'all'
+    ? (MONTH_LABELS.length > 0 ? MONTH_LABELS[0].split('/')[1] ? MONTH_LABELS[0] + '–' + MONTH_LABELS[MONTH_LABELS.length-1] : 'Todos' : 'Todos')
+    : (MONTH_LABELS[MONTHS.indexOf(state.period)] || state.period.toUpperCase());
+  const filters = [];
+  if (state.vendedor !== 'all') filters.push(state.vendedor);
+  if (state.grupo !== 'all') filters.push(state.grupo);
+  const suffix = filters.length > 0 ? ' — ' + filters.join(', ') : '';
+  document.querySelector('.table-wrap .section-sub').textContent = 'Faturamento ' + periodLabel + suffix;
+}
+
+// ─── DONUT ────────────────────────────────────────────────────
+let donut = null;
+function buildDonut() {
+  const ms = activeMonths();
+  const m  = DATA.mercadoMes;
+  const ext = ms.reduce((s,k) => s + m.exterior[k], 0);
+  const int = ms.reduce((s,k) => s + m.interno[k],  0);
+
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  if (donut) donut.destroy();
+  donut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Exterior','Interno'],
+      datasets: [{
+        data: [ext, int],
+        backgroundColor: ['#c41230','#f59e0b'],
+        borderColor: '#161616', borderWidth: 3, hoverBorderColor: '#161616'
+      }]
+    },
+    options: {
+      responsive: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ' ' + fmtM(c.raw) } }
+      },
+      animation: { duration: 500 }
+    }
+  });
+  const total = ext + int;
+  const pct = total > 0 ? Math.round(ext/total*100) : 0;
+  document.getElementById('donut-pct').textContent = pct + '%';
+  document.getElementById('donut-legend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-dot-name"><div class="legend-dot" style="background:var(--red)"></div>Exterior</div>
+      <span class="legend-val">${fmtM(ext)}</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot-name"><div class="legend-dot" style="background:var(--amber)"></div>Interno</div>
+      <span class="legend-val">${fmtM(int)}</span>
+    </div>`;
+}
+
+// ─── META BAR ─────────────────────────────────────────────────
+function updateMeta() {
+  const ratio = getMercadoRatio();
+  const ytd = activeMonths().reduce((s,m) => s + (DATA.monthly[m] || 0), 0) * ratio;
+  const pct = (ytd / DATA.meta * 100).toFixed(1);
+  document.getElementById('meta-fill').style.width = Math.min(+pct, 100) + '%';
+  const lab = state.period === 'all' ? 'Faturamento YTD ' + new Date().getFullYear()
+    : 'Faturamento ' + (MONTH_LABELS[MONTHS.indexOf(state.period)] || state.period.toUpperCase());
+  document.getElementById('meta-label').textContent = lab;
+  document.getElementById('meta-val').innerHTML = `R$ <b>${fmtShort(ytd)}</b> / R$ 120M meta`;
+  document.getElementById('meta-pct').textContent = `(${pct.replace('.',',')}%)`;
+}
+
+// ─── GLOBAL REFRESH ───────────────────────────────────────────
+function refreshAll() {
+  recompute();
+  updateKPIs();
+  updateMeta();
+  buildHeatmap();
+  buildDonut();
+  buildGrupos();
+  buildPaises();
+  buildTable();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPLOAD LOCAL DE ARQUIVO XLSX
+// ═══════════════════════════════════════════════════════════════
+
+// Column indices (0-based Excel columns)
+const COL = { dataEmissao:1, nf:2, cliente:3, pais:4, vendedor:5, subVendedor:8, mercado:11, valor:12, produto:30, peso:31, subGrupo:33 };
+
+const COUNTRY_FLAGS = {
+  'CHINA':{'🇨🇳':1}, 'NETHERLANDS':{'🇳🇱':1}, 'RUSSIA':{'🇷🇺':1}, 'RUSSIA (RÚSSIA)':{'🇷🇺':1},
+  'INDONESIA':{'🇮🇩':1}, 'INDONESIA (INDONÉSIA)':{'🇮🇩':1}, 'MALASIA':{'🇲🇾':1}, 'MALAYSIA':{'🇲🇾':1},
+  'BRASIL':{'🇧🇷':1}, 'BRAZIL':{'🇧🇷':1}, 'UNITED STATES':{'🇺🇸':1}, 'USA':{'🇺🇸':1},
+  'GERMANY':{'🇩🇪':1}, 'ALEMANHA':{'🇩🇪':1}, 'IRELAND':{'🇮🇪':1}, 'TURKEY':{'🇹🇷':1},
+  'EGYPT':{'🇪🇬':1}, 'ARGENTINA':{'🇦🇷':1}, 'VENEZUELA':{'🇻🇪':1}, 'COLOMBIA':{'🇨🇴':1}
+};
+
+
+// ─── TOAST ───────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  const dur = type === 'error' ? 8000 : 3500;
+  toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ─── LOADING ─────────────────────────────────────────────────
+function showLoading(text, sub='Aguarde…') {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading-sub').textContent  = sub;
+  document.getElementById('loading-overlay').classList.add('visible');
+}
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('visible'); }
+
+// ─── UPLOAD LOCAL (XLSX) ──────────────────────────────────────
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  // reset para permitir re-selecionar o mesmo arquivo
+  input.value = '';
+
+  const btn = document.getElementById('btn-atualizar');
+  btn.style.opacity = '0.6';
+  btn.disabled = true;
+  try {
+    showLoading('Lendo arquivo…', file.name);
+    const buf = await file.arrayBuffer();
+
+    showLoading('Lendo planilha…', 'Identificando aba e colunas');
+    const rows = parseExcel(buf);
+    const totalLinhas = rows.length - 1;
+
+    if (totalLinhas <= 0) {
+      throw new Error('Arquivo vazio ou aba sem dados. Verifique o arquivo XLSX.');
+    }
+
+    showLoading('Processando registros…', `${totalLinhas.toLocaleString('pt-BR')} linhas encontradas`);
+    const records = processRows(rows);
+
+    if (records.length === 0) {
+      const sample = rows[1] || [];
+      const diag = `Col B=${JSON.stringify(sample[1])}, Col F=${JSON.stringify(sample[5])}, Col M=${JSON.stringify(sample[12])}`;
+      throw new Error(`Nenhum registro válido processado de ${totalLinhas} linhas. Verifique colunas de data/valor. Amostra linha 2: ${diag}`);
+    }
+
+    const anos = [...new Set(records.map(r => r.year))].sort().join(', ');
+    const meses = [...new Set(records.map(r => r.mes))].sort((a,b)=>a-b).map(m => MONTH_KEYS[m]).join(', ');
+    showLoading('Calculando indicadores…', `${records.length.toLocaleString('pt-BR')} registros | Anos: ${anos} | Meses: ${meses}`);
+
+    allRecords = records;
+    const agg = computeAggregations(records);
+    applyNewData(agg, records.length);
+    showToast(`Dados carregados: ${records.length.toLocaleString('pt-BR')} registros`, 'success');
+
+  } catch(e) {
+    const msg = e.message || String(e);
+    showToast('Erro: ' + msg, 'error');
+    console.error('[Dashboard] Erro ao processar arquivo:', e);
+  } finally {
+    hideLoading();
+    btn.style.opacity = '1';
+    btn.disabled = false;
+  }
+}
+
+// ─── PARSE EXCEL ─────────────────────────────────────────────
+function parseExcel(buf) {
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  // Tenta múltiplos nomes comuns de aba
+  const candidatos = ['Planilha1', 'Sheet1', 'Dados', 'Data', 'Base', wb.SheetNames[0]];
+  let ws = null, sheetUsed = '';
+  for (const nome of candidatos) {
+    if (wb.Sheets[nome]) { ws = wb.Sheets[nome]; sheetUsed = nome; break; }
+  }
+  if (!ws) {
+    throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${wb.SheetNames.join(', ')}`);
+  }
+  console.info('[Dashboard] Aba carregada:', sheetUsed, '| Abas disponíveis:', wb.SheetNames.join(', '));
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+  return rows;
+}
+
+// ─── CLEAN NAME (remove "99 - " prefix) ─────────────────────
+function cleanName(s) {
+  if (!s) return '';
+  return String(s).replace(/^\d+\s*-\s*/, '').trim();
+}
+
+// ─── PROCESS RAW ROWS → RECORDS ──────────────────────────────
+function processRows(rows) {
+  if (!rows || rows.length < 2) return [];
+  return rows.slice(1).reduce((acc, r) => {
+    if (!r) return acc;
+    const rawVal  = r[COL.valor];
+    const rawDate = r[COL.dataEmissao];
+    const valor   = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(',','.')) || 0;
+    if (!valor || !rawDate) return acc;
+
+    let mes, year;
+    if (rawDate instanceof Date) {
+      // cellDates:true cria Date em UTC — usar getUTC* para evitar desvio de fuso
+      mes  = rawDate.getUTCMonth() + 1;
+      year = rawDate.getUTCFullYear();
+    } else if (typeof rawDate === 'number') {
+      // número serial do Excel → UTC timestamp
+      const utcMs = Math.round((rawDate - 25569) * 86400 * 1000);
+      const d = new Date(utcMs);
+      mes  = d.getUTCMonth() + 1;
+      year = d.getUTCFullYear();
+    } else {
+      // string: parse como hora local
+      const dt = new Date(rawDate);
+      if (isNaN(dt)) return acc;
+      mes  = dt.getMonth() + 1;
+      year = dt.getFullYear();
+    }
+    if (!MONTH_KEYS[mes]) return acc;
+
+    acc.push({
+      mes,
+      year,
+      nf:          String(r[COL.nf]||''),
+      cliente:     cleanName(r[COL.cliente]),
+      pais:        cleanName(r[COL.pais]),
+      vendedor:    cleanName(r[COL.vendedor]),
+      subVendedor: cleanName(r[COL.subVendedor]),
+      mercado:     String(r[COL.mercado]||'').toUpperCase(),
+      valor,
+      produto:     String(r[COL.produto]||''),
+      subGrupo:    String(r[COL.subGrupo]||'OUTROS')
+    });
+    return acc;
+  }, []);
+}
+
+// ─── COMPUTE AGGREGATIONS ─────────────────────────────────────
+function computeAggregations(records) {
+  const allMK = Object.values(MONTH_KEYS); // ['jan','fev',...,'dez']
+  const zeroAll = () => { const o={}; allMK.forEach(mk=>o[mk]=0); return o; };
+  const setAll  = () => { const o={}; allMK.forEach(mk=>o[mk]=new Set()); return o; };
+
+  // Monthly totals
+  const monthly    = zeroAll();
+  const monthlyNfs = zeroAll();
+  const monthlyCli = zeroAll();
+  const nfSets  = setAll();
+  const cliSets = setAll();
+
+  // Mercado per month
+  const mercadoMes = { exterior: zeroAll(), interno: zeroAll() };
+
+  // Sub Grupo per month
+  const sgMap = {};
+
+  // Vendedor per month
+  const venMap = {};
+
+  // Sub Vendedor per month (heatmap)
+  const svMap = {};
+
+  // Países (exterior only)
+  const paisMap = {};
+
+  // Track which months and years have data
+  const presentMonths = new Set();
+  const presentYears  = new Set();
+
+  records.forEach(r => {
+    const mk = MONTH_KEYS[r.mes];
+    if (!mk) return;
+    presentMonths.add(r.mes);
+    if (r.year) presentYears.add(r.year);
+
+    monthly[mk]  += r.valor;
+    if (r.nf)      nfSets[mk].add(r.nf);
+    if (r.cliente) cliSets[mk].add(r.cliente);
+
+    const isExt = r.mercado.includes('EXT');
+    if (isExt) mercadoMes.exterior[mk] += r.valor;
+    else       mercadoMes.interno[mk]  += r.valor;
+
+    // Sub Grupo
+    const sg = r.subGrupo || 'OUTROS';
+    if (!sgMap[sg]) sgMap[sg] = zeroAll();
+    sgMap[sg][mk] += r.valor;
+
+    // Vendedor
+    const ven = r.vendedor || 'OUTROS';
+    if (!venMap[ven]) venMap[ven] = { fat: zeroAll(), nfs: setAll(), cli: setAll(), grupos: new Set() };
+    venMap[ven].fat[mk] += r.valor;
+    if (r.nf)      venMap[ven].nfs[mk].add(r.nf);
+    if (r.cliente) venMap[ven].cli[mk].add(r.cliente);
+    if (sg)        venMap[ven].grupos.add(sg);
+
+    // Sub Vendedor
+    const sv = r.subVendedor || 'OUTROS';
+    if (!svMap[sv]) svMap[sv] = zeroAll();
+    svMap[sv][mk] += r.valor;
+
+    // Países exterior
+    if (isExt && r.pais) {
+      const pKey = r.pais.toUpperCase();
+      paisMap[pKey] = (paisMap[pKey]||0) + r.valor;
+    }
+  });
+
+  // Finalise monthly counts
+  allMK.forEach(mk => {
+    monthlyNfs[mk] = nfSets[mk].size;
+    monthlyCli[mk] = cliSets[mk].size;
+  });
+
+  // Available months and years sorted chronologically
+  const availMonths = [...presentMonths].sort((a,b) => a - b).map(n => MONTH_KEYS[n]);
+  const availYears  = [...presentYears].sort((a,b) => a - b);
+
+  // Sub Grupos sorted desc by total
+  const subGrupoColors = ['#c41230','#3b82f6','#0d9488','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+  const gruposMes = Object.entries(sgMap)
+    .map(([name,v]) => {
+      const total = availMonths.reduce((s,mk) => s + v[mk], 0);
+      const obj = { name, color:'', total };
+      availMonths.forEach(mk => obj[mk] = v[mk]);
+      return obj;
+    })
+    .sort((a,b) => b.total - a.total)
+    .map((g,i) => ({ ...g, color: subGrupoColors[i % subGrupoColors.length] }));
+
+  // Vendedores sorted desc by total fat
+  const vendedores = Object.entries(venMap)
+    .map(([name, d]) => {
+      const fat = d.fat;
+      const nfs = {}; const cli = {};
+      availMonths.forEach(mk => { nfs[mk] = d.nfs[mk].size; cli[mk] = d.cli[mk].size; });
+      return { name, fat, nfs, cli, grupos: [...d.grupos] };
+    })
+    .sort((a,b) => availMonths.reduce((s,mk)=>s+b.fat[mk]-a.fat[mk],0))
+    .slice(0, 10);
+
+  // Heatmap top 8 sub vendedores by total
+  const heatmap = Object.entries(svMap)
+    .map(([name,v]) => {
+      const total = availMonths.reduce((s,mk) => s + v[mk], 0);
+      const obj = { name: name.slice(0,25), total };
+      availMonths.forEach(mk => obj[mk] = v[mk]);
+      return obj;
+    })
+    .sort((a,b) => b.total - a.total)
+    .slice(0, 8)
+    .map(({total, ...rest}) => rest);
+
+  // Top 5 países exterior
+  const flagFor = key => {
+    const up = key.toUpperCase();
+    for (const [k,v] of Object.entries(COUNTRY_FLAGS)) { if (up.includes(k)) return Object.keys(v)[0]||'🌍'; }
+    return '🌍';
+  };
+  const paises = Object.entries(paisMap)
+    .sort((a,b) => b[1]-a[1]).slice(0,5)
+    .map(([raw, value]) => {
+      const name = raw.replace(/^\d+\s*-\s*/,'').trim();
+      return { name: name.length > 16 ? name.slice(0,14)+'…' : name, value, flag: flagFor(name) };
+    });
+
+  return { monthly, monthlyNfs, monthlyCli, mercadoMes, gruposMes, vendedores, heatmap, paises, availMonths, availYears };
+}
+
+// ─── APPLY NEW DATA TO DASHBOARD ─────────────────────────────
+function applyNewData(agg, totalRecords) {
+  DATA.monthly    = agg.monthly;
+  DATA.monthlyNfs = agg.monthlyNfs;
+  DATA.monthlyCli = agg.monthlyCli;
+  DATA.mercadoMes = agg.mercadoMes;
+  DATA.gruposMes  = agg.gruposMes;
+  DATA.vendedores = agg.vendedores;
+  DATA.heatmap    = agg.heatmap;
+  DATA.paises     = agg.paises;
+
+  // Atualiza meses e anos disponíveis dinamicamente
+  if (agg.availMonths && agg.availMonths.length > 0) {
+    MONTHS = agg.availMonths;
+    if (agg.availYears && agg.availYears.length > 0) {
+      updateYearButtons(agg.availYears);
+      const yr = state.year !== 'all' ? state.year : String(agg.availYears[agg.availYears.length - 1]);
+      YEAR_SUFFIX = String(yr).slice(-2);
+    }
+    MONTH_LABELS = MONTHS.map(mk => MONTH_PT[mk] + '/' + YEAR_SUFFIX);
+    if (state.period !== 'all' && !MONTHS.includes(state.period)) state.period = 'all';
+    updatePeriodButtons();
+  }
+
+  // Recompute total meta KPI
+  const totalFat = MONTHS.reduce((s,mk) => s + (agg.monthly[mk]||0), 0);
+  DATA.meta = Math.ceil(totalFat / 0.80 / 1e6) * 1e6;
+
+  // Atualiza select de Vendedor com valores reais
+  const selVen = document.querySelector('select.select-filter[onchange="setVendedor(this.value)"]');
+  if (selVen && agg.vendedores.length > 0) {
+    selVen.innerHTML = '<option value="all">Todos os vendedores</option>' +
+      agg.vendedores.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+    selVen.value = state.vendedor === 'all' ? 'all' : state.vendedor;
+  }
+
+  // Atualiza select de Sub Grupos com valores reais
+  const selGrupo = document.getElementById('sel-grupo');
+  if (selGrupo && agg.gruposMes.length > 0) {
+    selGrupo.innerHTML = '<option value="all">Todos os sub grupos</option>' +
+      agg.gruposMes.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+  }
+
+  refreshAll(); // buildPaises já está dentro de refreshAll
+
+  // Redraw sparklines com dados reais
+  requestAnimationFrame(() => {
+    const m = agg.monthly, n = agg.monthlyNfs, c = agg.monthlyCli;
+    drawSparkline('spark-fat',    MONTHS.map(mk=>m[mk]||0), '#c41230');
+    drawSparkline('spark-nfs',    MONTHS.map(mk=>n[mk]||0), '#3b82f6');
+    drawSparkline('spark-cli',    MONTHS.map(mk=>c[mk]||0), '#0d9488');
+    drawSparkline('spark-ticket', MONTHS.map(mk=>(m[mk]||0)/((n[mk]||0)||1)), '#f59e0b');
+  });
+
+  // Atualiza badge para LIVE
+  const badge = document.getElementById('data-source-badge');
+  if (badge) {
+    badge.textContent = '● LIVE — fBase_Dados.xlsx';
+    badge.style.background = 'rgba(13,148,136,0.15)';
+    badge.style.color = 'var(--teal)';
+  }
+
+  const nrecs = totalRecords.toLocaleString('pt-BR');
+  showToast(`✓ Dados atualizados — ${nrecs} registros carregados do SharePoint`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILTER ACTIONS ───────────────────────────────────────────────
+function setYear(val, el) {
+  state.year = val;
+  state.period = 'all'; // reseta mês ao trocar de ano
+  document.querySelectorAll('[data-year]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Atualiza sufixo do label de mês
+  if (val !== 'all') {
+    YEAR_SUFFIX = String(val).slice(-2);
+    MONTH_LABELS = MONTHS.map(mk => MONTH_PT[mk] + '/' + YEAR_SUFFIX);
+    updatePeriodButtons();
+  }
+  refreshAll();
+}
+
+function setPeriod(val, el) {
+  state.period = val;
+  document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  refreshAll();
+}
+
+function setMercado(val, el) {
+  state.mercado = val;
+  document.querySelectorAll('[data-mercado]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  refreshAll();
+}
+
+function setVendedor(v) {
+  state.vendedor = v;
+  refreshAll();
+}
+
+function setGrupo(v) {
+  state.grupo = v;
+  refreshAll();
+}
+
+function atualizar() {
+  document.getElementById('xlsx-input').click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  // Inicializa botão de ano com dado demo
+  updateYearButtons([2026]);
+
+  // Popula selects com dados demo para filtros funcionarem sem dados reais
+  const selVen = document.querySelector('select.select-filter[onchange="setVendedor(this.value)"]');
+  if (selVen) {
+    selVen.innerHTML = '<option value="all">Todos os vendedores</option>' +
+      DATA.vendedores.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+  }
+  const selGrupo = document.getElementById('sel-grupo');
+  if (selGrupo) {
+    selGrupo.innerHTML = '<option value="all">Todos os sub grupos</option>' +
+      DATA.gruposMes.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+  }
+
+  refreshAll();
+
+  requestAnimationFrame(() => {
+    const m = DATA.monthly;
+    const n = DATA.monthlyNfs;
+    const c = DATA.monthlyCli;
+    drawSparkline('spark-fat',    MONTHS.map(mk=>m[mk]||0), '#c41230');
+    drawSparkline('spark-nfs',    MONTHS.map(mk=>n[mk]||0), '#3b82f6');
+    drawSparkline('spark-cli',    MONTHS.map(mk=>c[mk]||0), '#0d9488');
+    drawSparkline('spark-ticket', MONTHS.map(mk=>(m[mk]||0)/((n[mk]||0)||1)), '#f59e0b');
+  });
+});
+</script>
+</body>
+</html>
