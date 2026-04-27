@@ -61,7 +61,8 @@
       "Bash(ipconfig)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8766/plano_elite_luis.html)",
       "Bash(python -m http.server 8080)",
-      "Bash(start /B python -m http.server 8080)"
+      "Bash(start /B python -m http.server 8080)",
+      "Bash(gh api:*)"
     ]
   }
 }
